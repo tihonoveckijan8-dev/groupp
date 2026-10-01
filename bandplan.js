@@ -322,12 +322,12 @@ async function initCloud() {
   try {
     const { data, error } = await cloud.client.from('bandplan_state').select('id,state,updated_at').eq('id', CLOUD_ID).maybeSingle();
     if (error) throw error;
-    if (data && data.state && !isDemoState(data.state)) {
+    cloud.ready = true;
+    if (data && data.state) {
       applyCloudState(data);
     } else if (!data) {
       await pushCloudState();
     }
-    cloud.ready = true;
 
     cloud.channel = cloud.client.channel('bandplan-state-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bandplan_state', filter: 'id=eq.' + CLOUD_ID },
