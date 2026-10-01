@@ -173,26 +173,8 @@ const REPEATS = { none: 'Без повтора', weekly: 'Каждую неде�
 const PALETTE = ['#2547D0', '#1F7A5A', '#6E4483', '#8F6311', '#A93B32', '#2C6E80', '#4C525F', '#7A5230'];
 const ACCENTS = ['#2547D0', '#1B3A6B', '#1F7A5A', '#6E4483', '#8F6311', '#A93B32', '#2C6E80', '#4C525F', '#7A5230'];
 
-/* ═══ 5. STATE + CLOUD SYNC ═══ */
+/* ═══ 5. STATE ═══ */
 const KEY = 'bandplan.premium.v6';
-const SUPABASE_URL = 'https://pqtbkywnklgygdludwpn.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5VRpv6hE4OFaSDmlI_lhWA_64fXmehq';
-const CLOUD_ID = 'bandplan-shared-workspace';
-const CLIENT_ID = (() => {
-  const k = 'bandplan.client.id';
-  let v = localStorage.getItem(k);
-  if (!v) { v = uid('client'); localStorage.setItem(k, v); }
-  return v;
-})();
-const cloud = {
-  client: null,
-  ready: false,
-  applying: false,
-  timer: null,
-  channel: null,
-  initialized: false
-};
-
 function defaults() {
   return {
     profile: { name: '', role: '', bandName: 'Моя группа', bandDesc: '', defaultParticipation: 'yes', roles: [] },
@@ -211,164 +193,82 @@ const ui = {
   songQuery: '', songKey: '', songTag: '', songSort: 'title', songFav: false,
   libQuery: '', detailTrans: {}, searchQ: '', searchIdx: 0, searchFlat: [], skeleton: false
 };
-
-function normalizeState(d) {
-  const base = defaults();
-  const src = d && typeof d === 'object' ? d : {};
-  state = Object.assign(base, src);
-  state.profile = Object.assign(base.profile, src.profile || {});
-  state.settings = Object.assign(base.settings, src.settings || {});
-  state.members = Array.isArray(src.members) ? src.members : [];
-  state.events = Array.isArray(src.events) ? src.events : [];
-  state.songs = Array.isArray(src.songs) ? src.songs : [];
-  state.setlists = Array.isArray(src.setlists) ? src.setlists : [];
-  if (!state.settings.accent || ['#6c5ce7', '#2f55d4'].indexOf(String(state.settings.accent).toLowerCase()) >= 0) state.settings.accent = '#2547D0';
-  return state;
-}
-
 function load() {
   try {
     const raw = localStorage.getItem(KEY) || localStorage.getItem('bandplan.premium.v5') || localStorage.getItem('bandplan.premium.v4');
     if (!raw) return false;
-    normalizeState(JSON.parse(raw));
+    const d = JSON.parse(raw);
+    state = Object.assign(defaults(), d);
+    state.profile = Object.assign(defaults().profile, d.profile || {});
+    state.settings = Object.assign(defaults().settings, d.settings || {});
+    if (!state.settings.accent || ['#6c5ce7', '#2f55d4'].indexOf(state.settings.accent.toLowerCase()) >= 0) state.settings.accent = '#2547D0';
+    state.members = d.members || []; state.events = d.events || [];
+    state.songs = d.songs || []; state.setlists = d.setlists || [];
     return true;
-  } catch (e) { state = defaults(); return false; }
+  } catch (e) { return false; }
 }
-
-function saveLocal() {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch (e) { toast('Не удалось сохранить локальные данные', 'err'); }
-}
-
-function save() {
-  saveLocal();
-  queueCloudSave();
-}
-
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Не удалось сохранить: хранилище браузера недоступно', 'err'); } }
 function commit() { save(); render(); }
-
-function setNetworkState(label) {
-  const bar = $('#netBar');
-  if (!bar) return;
-  if (label === 'cloud') {
-    bar.hidden = false;
-    bar.innerHTML = ic('checkCircle', 16) + '<span>Синхронизировано с облаком</span>';
-    clearTimeout(setNetworkState._t);
-    setNetworkState._t = setTimeout(() => {
-      if (navigator.onLine) bar.hidden = true;
-    }, 1800);
-  } else if (label === 'syncing') {
-    bar.hidden = false;
-    bar.innerHTML = ic('bolt', 16) + '<span>Синхронизация…</span>';
-  } else if (label === 'error') {
-    bar.hidden = false;
-    bar.innerHTML = ic('alert', 16) + '<span>Облако недоступно — изменения сохранены на этом устройстве</span>';
-  }
-}
-
-function queueCloudSave() {
-  if (!cloud.ready || cloud.applying || !cloud.client) return;
-  clearTimeout(cloud.timer);
-  cloud.timer = setTimeout(pushCloudState, 260);
-}
-
-async function pushCloudState() {
-  if (!cloud.ready || cloud.applying || !cloud.client || !navigator.onLine) return;
-  setNetworkState('syncing');
-  const payload = {
-    id: CLOUD_ID,
-    state: JSON.parse(JSON.stringify(state)),
-    client_id: CLIENT_ID,
-    updated_at: new Date().toISOString()
-  };
-  const { error } = await cloud.client.from('bandplan_state').upsert(payload, { onConflict: 'id' });
-  if (error) {
-    console.warn('[BandPlan] Supabase save failed', error);
-    setNetworkState('error');
-  } else {
-    setNetworkState('cloud');
-  }
-}
-
-function applyCloudState(remote) {
-  if (!remote || !remote.state || typeof remote.state !== 'object') return;
-  cloud.applying = true;
-  normalizeState(remote.state);
-  saveLocal();
-  applyTheme();
-  applyAccentVars();
-  cloud.applying = false;
-  ui.skeleton = false;
-  render();
-}
-
-async function initCloud() {
-  if (cloud.initialized) return;
-  cloud.initialized = true;
-  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-    console.warn('[BandPlan] Supabase client is unavailable');
-    return;
-  }
-  cloud.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  try {
-    const { data, error } = await cloud.client.from('bandplan_state').select('id,state,updated_at').eq('id', CLOUD_ID).maybeSingle();
-    if (error) throw error;
-    cloud.ready = true;
-    if (data && data.state) {
-      applyCloudState(data);
-    } else if (!data) {
-      await pushCloudState();
-    }
-
-    cloud.channel = cloud.client.channel('bandplan-state-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bandplan_state', filter: 'id=eq.' + CLOUD_ID },
-        payload => {
-          if (payload.eventType === 'DELETE') return;
-          const remote = payload.new;
-          if (remote && remote.client_id !== CLIENT_ID) applyCloudState(remote);
-        })
-      .subscribe();
-  } catch (e) {
-    console.warn('[BandPlan] Supabase init failed', e);
-    setNetworkState('error');
-  }
-}
-
 const songById = id => state.songs.find(s => s.id === id);
 const evById = id => state.events.find(e => e.id === id);
 const slById = id => state.setlists.find(s => s.id === id);
 const memById = id => state.members.find(m => m.id === id);
 
-/* ═══ 5B. DEMO DATA TOOL (manual only) ═══ */
+/* ═══ 6. DEMO ═══ */
 function seedDemo() {
-  const now = today();
-  const plus = d => { const x = new Date(now + 'T00:00:00'); x.setDate(x.getDate() + d); return iso(x); };
-  state.profile = Object.assign(state.profile, { bandName: 'Neon Coast', bandDesc: 'Демонстрационный состав' });
+  const d0 = new Date();
+  const off = (n, h, m) => { const x = new Date(d0); x.setDate(x.getDate() + n); return { date: iso(x), time: pad(h) + ':' + pad(m || 0) }; };
   state.members = [
-    { id: uid('mem'), name: 'Аня Соколова', role: 'vocal', roles: ['vocal'], status: 'active' },
-    { id: uid('mem'), name: 'Марк Гринёв', role: 'guitar', roles: ['guitar'], status: 'active' },
-    { id: uid('mem'), name: 'Тимур Валеев', role: 'drums', roles: ['drums'], status: 'active' },
-    { id: uid('mem'), name: 'Лена Ким', role: 'keys', roles: ['keys'], status: 'active' }
+    { id: uid('m'), name: 'Аня Соколова', role: 'vocal', color: PALETTE[0], note: 'Основной вокал' },
+    { id: uid('m'), name: 'Марк Гринёв', role: 'guitar', color: PALETTE[1], note: 'Соло и ритм' },
+    { id: uid('m'), name: 'Тимур Валеев', role: 'bass', color: PALETTE[2], note: '' },
+    { id: uid('m'), name: 'Лена Ким', role: 'drums', color: PALETTE[3], note: '' }
   ];
+  if (!state.profile.name) state.profile.name = 'Аня Соколова';
+  if (!state.profile.role) state.profile.role = 'vocal';
   state.songs = [
-    { id: uid('song'), title: 'Город не спит', artist: 'Neon Coast', key: 'Am', bpm: 96, duration: 238, tags: ['city','live'], favorite: true, lyrics: '[Intro]\nAm  F  C  G\n\n[Verse]\n[Am]Ночной город не спит\n[F]И музыка звучит', modified: new Date().toISOString() },
-    { id: uid('song'), title: 'Северный ветер', artist: 'Neon Coast', key: 'Em', bpm: 82, duration: 264, tags: ['ballad'], favorite: false, lyrics: '[Verse]\nEm  C  G  D\n\n[Em]Северный ветер', modified: new Date().toISOString() },
-    { id: uid('song'), title: 'Эхо', artist: 'Neon Coast', key: 'C', bpm: 118, duration: 202, tags: ['pop'], favorite: false, lyrics: '[Chorus]\nC  G  Am  F\n\n[C]Эхо в пустом городе', modified: new Date().toISOString() },
-    { id: uid('song'), title: 'Тише воды', artist: 'Neon Coast', key: 'G', bpm: 74, duration: 251, tags: ['slow'], favorite: false, lyrics: '[Verse]\nG  D  Em  C\n\n[G]Тише воды', modified: new Date().toISOString() },
-    { id: uid('song'), title: '220 вольт', artist: 'Neon Coast', key: 'D', bpm: 132, duration: 196, tags: ['rock'], favorite: false, lyrics: '[Chorus]\nD  A  Bm  G\n\n[D]Двести двадцать вольт', modified: new Date().toISOString() },
-    { id: uid('song'), title: 'Маршрут построен', artist: 'Neon Coast', key: 'F#m', bpm: 108, duration: 225, tags: ['drive'], favorite: true, lyrics: '[Intro]\nF#m  D  A  E\n\n[F#m]Маршрут построен', modified: new Date().toISOString() }
+    { id: uid('s'), title: 'Город не спит', artist: 'Neon Coast', key: 'Em', bpm: 104, duration: 225, tags: ['рок', 'сингл'], fav: true, addedAt: today(),
+      lyrics: '[Куплет 1]\nEm            G\nОгни витрин, пустой проспект\nC             D\nМы ловим этот странный свет\nEm            G\nИ город шепчет нам в ответ\n\n[Припев]\nC     G       D     Em\nМы не спим, мы горим\nC     G       D\nДо рассвета, до зари\nC     G       D     Em\nНеон по венам, бит в груди\nC     D       Em\nПопробуй нас остановить',
+      dynamics: { instruments: ['vocal', 'guitar', 'bass', 'drums'], sections: ['Куплет 1', 'Припев'],
+        levels: { vocal: { 'Куплет 1': 'mp', 'Припев': 'f' }, guitar: { 'Куплет 1': 'p', 'Припев': 'ff' }, bass: { 'Куплет 1': 'mp', 'Припев': 'f' }, drums: { 'Куплет 1': 'p', 'Припев': 'ff' } } } },
+    { id: uid('s'), title: 'Северный ветер', artist: 'Neon Coast', key: 'Am', bpm: 88, duration: 252, tags: ['баллада'], fav: false, addedAt: today(),
+      lyrics: '[Куплет 1]\nAm      F       C       G\nВетер с севера несёт соль\nAm      F       G\nНаших несказанных слов\n\n[Припев]\nF       G       Em      Am\nДержи мою руку сквозь туман\nF       G       C\nМы вернёмся к берегам',
+      dynamics: { instruments: ['vocal', 'guitar', 'keys'], sections: ['Куплет 1', 'Припев'], levels: { vocal: { 'Куплет 1': 'p', 'Припев': 'mf' }, guitar: { 'Куплет 1': 'pp', 'Припев': 'mp' }, keys: { 'Куплет 1': 'mp', 'Припев': 'mf' } } } },
+    { id: uid('s'), title: 'Эхо', artist: 'Neon Coast', key: 'D', bpm: 120, duration: 198, tags: ['рок', 'энергично'], fav: true, addedAt: today(),
+      lyrics: '[Интро]\nD   A   Bm  G\n\n[Куплет 1]\nD           A\nКаждый шаг отдаётся в стенах\nBm          G\nКаждый вдох превращается в эхо\n\n[Припев]\nG     A       D       Bm\nГромче, ещё громче\nG     A       D\nПусть услышат все',
+      dynamics: { instruments: ['vocal', 'guitar', 'bass', 'drums'], sections: ['Интро', 'Куплет 1', 'Припев'], levels: { vocal: { 'Интро': '', 'Куплет 1': 'mp', 'Припев': 'ff' }, guitar: { 'Интро': 'mf', 'Куплет 1': 'mp', 'Припев': 'ff' }, bass: { 'Интро': 'mp', 'Куплет 1': 'mf', 'Припев': 'f' }, drums: { 'Интро': 'p', 'Куплет 1': 'mf', 'Припев': 'ff' } } } },
+    { id: uid('s'), title: 'Тише воды', artist: 'Neon Coast', key: 'G', bpm: 72, duration: 270, tags: ['баллада', 'акустика'], fav: false, addedAt: today(),
+      lyrics: '[Куплет 1]\nG       Em      C       D\nТише воды, ниже травы\nG       Em      C       D\nМы с тобою до поры\n\n[Припев]\nC       D       G       Em\nНе буди этот сон до утра\nC       D       G\nПусть нам снятся острова',
+      dynamics: { instruments: ['vocal', 'guitar'], sections: ['Куплет 1', 'Припев'], levels: { vocal: { 'Куплет 1': 'pp', 'Припев': 'mp' }, guitar: { 'Куплет 1': 'pp', 'Припев': 'p' } } } },
+    { id: uid('s'), title: '220 вольт', artist: 'Neon Coast', key: 'E', bpm: 140, duration: 184, tags: ['рок', 'энергично'], fav: false, addedAt: today(),
+      lyrics: '[Куплет 1]\nE       A       E       B\nТок по проводам, искра по губам\nE       A       B       E\nДвести двадцать вольт — я не верю тормозам\n\n[Припев]\nA       E       B       C#m\nБей в барабаны, жги усилитель\nA       B       E\nЭто наш последний выключатель',
+      dynamics: { instruments: ['vocal', 'guitar', 'bass', 'drums'], sections: ['Куплет 1', 'Припев'], levels: { vocal: { 'Куплет 1': 'f', 'Припев': 'ff' }, guitar: { 'Куплет 1': 'ff', 'Припев': 'ff' }, bass: { 'Куплет 1': 'f', 'Припев': 'ff' }, drums: { 'Куплет 1': 'ff', 'Припев': 'ff' } } } },
+    { id: uid('s'), title: 'Маршрут построен', artist: 'Neon Coast', key: 'C', bpm: 96, duration: 233, tags: ['инди'], fav: true, addedAt: today(),
+      lyrics: '[Куплет 1]\nC       G       Am      F\nМаршрут построен, но мы свернём\nC       G       F\nТуда, где нас никто не ждёт\n\n[Припев]\nF       G       C       Am\nДорога длиннее, чем кажется\nF       G       C\nНо мы доедем обязательно',
+      dynamics: { instruments: ['vocal', 'guitar', 'keys', 'drums'], sections: ['Куплет 1', 'Припев'], levels: { vocal: { 'Куплет 1': 'mp', 'Припев': 'f' }, guitar: { 'Куплет 1': 'mp', 'Припев': 'mf' }, keys: { 'Куплет 1': 'p', 'Припев': 'mf' }, drums: { 'Куплет 1': 'p', 'Припев': 'f' } } } }
   ];
+  const S = state.songs;
+  state.setlists = [
+    { id: uid('sl'), name: 'Основной сет · 45 минут', note: 'Начинаем тихо, к третьему номеру разгон.', eventId: '',
+      items: [{ id: uid('i'), songId: S[5].id, shift: 0, note: 'Вступление — акустика' }, { id: uid('i'), songId: S[0].id, shift: 0, note: '' },
+      { id: uid('i'), songId: S[4].id, shift: 0, note: 'Без паузы' }, { id: uid('i'), songId: S[2].id, shift: 0, note: '' },
+      { id: uid('i'), songId: S[3].id, shift: -2, note: 'Понижаем для вокала' }] },
+    { id: uid('sl'), name: 'Квартирник · акустика', note: 'Камерный формат, две гитары.', eventId: '',
+      items: [{ id: uid('i'), songId: S[3].id, shift: 0, note: '' }, { id: uid('i'), songId: S[1].id, shift: 0, note: '' }] }
+  ];
+  const a = off(2, 19, 0), b = off(6, 20, 0), c = off(11, 14, 0), e = off(19, 18, 30), f = off(4, 12, 0), g = off(-5, 19, 0);
   state.events = [
-    { id: uid('ev'), title: 'Репетиция', date: plus(1), time: '19:00', end: '21:00', type: 'rehearsal', location: 'Студия', status: 'confirmed', participantIds: state.members.map(m => m.id), setlistId: null },
-    { id: uid('ev'), title: 'Концерт', date: plus(5), time: '20:00', end: '22:30', type: 'gig', location: 'Клуб', status: 'confirmed', participantIds: state.members.map(m => m.id), setlistId: null }
+    { id: uid('e'), type: 'rehearsal', title: 'Репетиция основного сета', date: a.date, time: a.time, end: '21:30', location: 'База на Лиговском', notes: 'Прогоняем финал и переходы.', status: 'upcoming', repeat: 'weekly', setlistId: state.setlists[0].id, myStatus: 'yes', except: [] },
+    { id: uid('e'), type: 'gig', title: 'Концерт в «Портах»', date: b.date, time: b.time, end: '22:00', location: 'Клуб «Порты»', notes: 'Саундчек в 17:00.', status: 'upcoming', repeat: 'none', setlistId: state.setlists[0].id, myStatus: 'yes', except: [] },
+    { id: uid('e'), type: 'recording', title: 'Запись сингла «Эхо»', date: c.date, time: c.time, end: '19:00', location: 'Студия K-Rec', notes: 'Живьём, 3 дубля.', status: 'upcoming', repeat: 'none', setlistId: '', myStatus: 'maybe', except: [] },
+    { id: uid('e'), type: 'gig', title: 'Фестиваль «Северный звук»', date: e.date, time: e.time, end: '19:15', location: 'Парк 300-летия', notes: 'Слот 45 минут, сцена B.', status: 'upcoming', repeat: 'none', setlistId: state.setlists[0].id, myStatus: 'yes', except: [] },
+    { id: uid('e'), type: 'meeting', title: 'Созвон по мерчу', date: f.date, time: f.time, end: '13:00', location: 'Онлайн', notes: '', status: 'upcoming', repeat: 'none', setlistId: '', myStatus: '', except: [] },
+    { id: uid('e'), type: 'gig', title: 'Квартирник у друзей', date: g.date, time: g.time, end: '21:00', location: 'Лофт «Тихий»', notes: '', status: 'done', repeat: 'none', setlistId: state.setlists[1].id, myStatus: 'yes', except: [] }
   ];
-  state.setlists = [{ id: uid('sl'), name: 'Демо-сет', eventId: state.events[1].id, items: state.songs.slice(0,4).map(s => ({ songId: s.id, note: '' })) }];
-  state.onboardingDone = true;
-  save(); render();
-  toast('Демо-данные загружены вручную', 'info');
+  save();
 }
 
-/* ═══ 6. EVENTS ENGINE ═══ */
+/* ═══ 7. EVENTS ENGINE ═══ */
 function expand(from, to) {
   const out = [], f = typeof from === 'string' ? from : iso(from), t = typeof to === 'string' ? to : iso(to);
   state.events.forEach(function (ev) {
@@ -606,7 +506,7 @@ function render() {
     else html = '<div class="card">' + stateHTML('err', 'Раздел не найден', 'Проверьте адрес или вернитесь в расписание.', '<a class="btn btn-primary" href="#/calendar">Открыть расписание</a>') + '</div>';
     v.innerHTML = html + (actionBarHTML || '');
   } catch (err) {
-    v.innerHTML = '<div class="card">' + stateHTML('err', 'Не удалось отобразить раздел', 'Данные сохранены локально. Облако временно недоступно — повторите попытку позже.', '<button class="btn btn-primary" type="button" data-act="reload-view">Повторить</button>') + '</div>';
+    v.innerHTML = '<div class="card">' + stateHTML('err', 'Не удалось отобразить раздел', 'Данные сохранены локально. Повторите попытку или вернитесь в расписание.', '<button class="btn btn-primary" type="button" data-act="reload-view">Повторить</button>') + '</div>';
   }
   afterRender(r);
 }
@@ -636,7 +536,16 @@ function heroHTML() {
     heroMetric(state.setlists.length, plural(state.setlists.length, 'сет-лист', 'сет-листа', 'сет-листов')) +
     heroMetric(state.members.length, 'участников в составе') +
     '</div></div>' +
-    '</div></section>';
+    '<div class="hero-visual" aria-hidden="true">' +
+    '<div class="hv-card"><div class="hv-row"><span class="hv-dot" style="background:var(--ok)"></span>' +
+    '<div class="grow"><div style="font-weight:600;font-size:13.5px">Репетиция · 19:00</div><div class="t-xs t-muted">База на Лиговском</div></div>' +
+    '<span class="badge b-ok">' + ic('check', 11) + 'Участвую</span></div></div>' +
+    '<div class="hv-card"><div class="cap" style="margin-bottom:8px">Динамика партии · вокал</div>' +
+    '<div class="hv-row" style="margin-bottom:8px"><span class="t-xs t-muted" style="width:64px">Куплет</span><span class="hv-bar"><i style="width:42%"></i></span><b class="num t-sm">mp</b></div>' +
+    '<div class="hv-row" style="margin-bottom:8px"><span class="t-xs t-muted" style="width:64px">Припев</span><span class="hv-bar"><i style="width:78%"></i></span><b class="num t-sm">f</b></div>' +
+    '<div class="hv-row"><span class="t-xs t-muted" style="width:64px">Финал</span><span class="hv-bar"><i style="width:100%"></i></span><b class="num t-sm">ff</b></div></div>' +
+    '<div class="hv-card"><div class="hv-row"><span class="badge b-muted num">Em</span><span class="t-sm t-2 grow nowrap">Город не спит</span><span class="badge b-muted num">104 BPM</span></div></div>' +
+    '</div></div></section>';
 }
 function heroMetric(v, l) { return '<div class="hero-metric"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>'; }
 function vCalendar() {
@@ -1177,7 +1086,7 @@ function vSettings() {
     '<div class="grid g4 mb" style="gap:var(--s3)">' + mini(state.songs.length, 'Песен') + mini(state.events.length, 'Событий') + mini(state.setlists.length, 'Сет-листов') + mini(state.members.length, 'Участников') + '</div>' +
     '<div class="row"><button class="btn btn-secondary btn-sm" type="button" data-act="export">' + ic('dl', 16) + 'Скачать копию (JSON)</button>' +
     '<button class="btn btn-secondary btn-sm" type="button" data-act="import">' + ic('ul', 16) + 'Загрузить из файла</button></div>' +
-    '<div class="row mt-s">' +
+    '<div class="row mt-s"><button class="btn btn-secondary btn-sm" type="button" data-act="demo">' + ic('bolt', 16) + 'Демо-данные</button>' +
     '<button class="btn btn-danger btn-sm" type="button" data-act="wipe">' + ic('trash', 16) + 'Удалить все данные</button></div>' +
     '<p class="t-xs t-muted mt">Объём данных: <span class="num">' + kb() + ' КБ</span> · последняя копия: ' + esc(s.lastBackup ? pdate(s.lastBackup) : 'не создавалась') + '</p></section>';
 
@@ -1591,7 +1500,7 @@ function applyAccentVars() {
 let onbStep = 0, onbData = null;
 function openOnboarding() {
   onbStep = 0;
-  onbData = { name: '', role: '', roles: [], bandName: '', bandDesc: '', participation: 'yes', members: [{ name: '', role: 'vocal', color: PALETTE[0] }], theme: 'light', accent: '#2547D0', demo: false };
+  onbData = { name: '', role: '', roles: [], bandName: '', bandDesc: '', participation: 'yes', members: [{ name: '', role: 'vocal', color: PALETTE[0] }], theme: 'light', accent: '#2547D0', demo: true };
   drawOnb(); $('#onb').classList.add('on');
 }
 function drawOnb() {
@@ -1624,9 +1533,8 @@ function drawOnb() {
       '<div class="field"><span class="field-label">Тема</span><div class="seg" id="ob_theme">' +
       [['light', 'Светлая'], ['dark', 'Тёмная'], ['amoled', 'AMOLED']].map(t => '<button type="button" data-v="' + t[0] + '" class="' + (onbData.theme === t[0] ? 'on' : '') + '" data-accent="1">' + t[1] + '</button>').join('') + '</div></div>' +
       '<div class="field"><span class="field-label">Стартовые данные</span><div class="row" style="gap:6px">' +
-      '<button type="button" class="chip' + (onbData.demo ? ' on' : '') + '" id="ob_demo_yes">' + ic('bolt', 13) + 'Загрузить демо</button>' +
-      '<button type="button" class="chip' + (!onbData.demo ? ' on' : '') + '" id="ob_demo_no">' + ic('plus', 13) + 'Начать с чистого листа</button></div></div>' +
-
+      '<button type="button" class="chip' + (onbData.demo ? ' on' : '') + '" id="ob_demo_yes">' + ic('bolt', 13) + 'Загрузить демо (6 песен с динамикой)</button>' +
+      '<button type="button" class="chip' + (!onbData.demo ? ' on' : '') + '" id="ob_demo_no">' + ic('plus', 13) + 'Начать с чистого листа</button></div></div>';
   }
   h += '<div class="onb-foot">' + (onbStep > 0 ? '<button class="btn btn-secondary" type="button" id="ob_back">' + ic('left', 16) + 'Назад</button>' : '<span></span>') +
     (onbStep < 3 ? '<button class="btn btn-primary" type="button" id="ob_next">Продолжить' + ic('right', 16) + '</button>' : '<button class="btn btn-primary" type="button" id="ob_done">' + ic('check', 16) + 'Начать работу</button>') + '</div></div>';
@@ -1653,7 +1561,7 @@ function drawOnb() {
     }));
   }
   if (onbStep === 3) {
-    $('#ob_theme button', el).forEach(b => b.addEventListener('click', () => { onbData.theme = b.getAttribute('data-v'); $('#ob_theme button', el).forEach(x => x.classList.toggle('on', x === b); }));
+    $$('#ob_theme button', el).forEach(b => b.addEventListener('click', () => { onbData.theme = b.getAttribute('data-v'); $$('#ob_theme button', el).forEach(x => x.classList.toggle('on', x === b)); }));
     bind('ob_demo_yes', 'click', () => { onbData.demo = true; $('#ob_demo_yes').classList.add('on'); $('#ob_demo_no').classList.remove('on'); });
     bind('ob_demo_no', 'click', () => { onbData.demo = false; $('#ob_demo_no').classList.add('on'); $('#ob_demo_yes').classList.remove('on'); });
   }
@@ -2002,7 +1910,15 @@ document.addEventListener('click', function (e) {
     case 'export': stop(); exportData(); break;
     case 'import': stop(); $('#fileIn').click(); break;
     case 'demo': {
-      seedDemo();
+      stop();
+      confirmBox('Загрузить демо-данные?', 'Текущие песни, события и сет-листы будут заменены демонстрационными. Профиль, состав и настройки сохранятся.', function () {
+        const keepP = state.profile, keepM = state.members, keepS = state.settings, keepO = state.onboardingDone;
+        state = defaults();
+        state.profile = keepP; state.members = keepM; state.settings = keepS; state.onboardingDone = keepO;
+        seedDemo(); state.profile = keepP; if (keepM.length) state.members = keepM;
+        applyTheme(); applyAccentVars(); save(); hardClose(modalRoot); ui.skeleton = true; go('#/calendar');
+        toast('Демо-данные загружены', 'ok');
+      }, 'Загрузить демо');
       break;
     }
     case 'wipe': {
@@ -2231,7 +2147,7 @@ function wireStickyHeader() {
 }
 
 /* ═══ 26. INIT ═══ */
-async function init() {
+function init() {
   const had = load();
   applyTheme(); applyAccentVars();
   ui.calView = state.settings.calView || 'month';
@@ -2243,12 +2159,10 @@ async function init() {
   $('#scBody').addEventListener('touchstart', () => { if (scene.auto) setAuto(false); }, { passive: true });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('#scene').classList.contains('on') && !scene.wake) reqWake(); });
   window.addEventListener('beforeunload', () => { if (scene.raf) cancelAnimationFrame(scene.raf); relWake(); });
-  window.addEventListener('online', () => { if (cloud.ready) pushCloudState(); });
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { }); });
   ui.skeleton = true;
   render();
-  await initCloud();
-  if (!had && !state.onboardingDone && !state.songs.length && !state.events.length) openOnboarding();
+  if (!had || !state.onboardingDone) openOnboarding();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
