@@ -230,16 +230,7 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY) || localStorage.getItem('bandplan.premium.v5') || localStorage.getItem('bandplan.premium.v4');
     if (!raw) return false;
-    const d = JSON.parse(raw);
-    normalizeState(d);
-    if (isDemoState(state)) {
-      state = defaults();
-      state.onboardingDone = true;
-      localStorage.removeItem(KEY);
-      localStorage.removeItem('bandplan.premium.v5');
-      localStorage.removeItem('bandplan.premium.v4');
-      return false;
-    }
+    normalizeState(JSON.parse(raw));
     return true;
   } catch (e) { state = defaults(); return false; }
 }
@@ -347,6 +338,35 @@ const songById = id => state.songs.find(s => s.id === id);
 const evById = id => state.events.find(e => e.id === id);
 const slById = id => state.setlists.find(s => s.id === id);
 const memById = id => state.members.find(m => m.id === id);
+
+/* ═══ 5B. DEMO DATA TOOL (manual only) ═══ */
+function seedDemo() {
+  const now = today();
+  const plus = d => { const x = new Date(now + 'T00:00:00'); x.setDate(x.getDate() + d); return iso(x); };
+  state.profile = Object.assign(state.profile, { bandName: 'Neon Coast', bandDesc: 'Демонстрационный состав' });
+  state.members = [
+    { id: uid('mem'), name: 'Аня Соколова', role: 'vocal', roles: ['vocal'], status: 'active' },
+    { id: uid('mem'), name: 'Марк Гринёв', role: 'guitar', roles: ['guitar'], status: 'active' },
+    { id: uid('mem'), name: 'Тимур Валеев', role: 'drums', roles: ['drums'], status: 'active' },
+    { id: uid('mem'), name: 'Лена Ким', role: 'keys', roles: ['keys'], status: 'active' }
+  ];
+  state.songs = [
+    { id: uid('song'), title: 'Город не спит', artist: 'Neon Coast', key: 'Am', bpm: 96, duration: 238, tags: ['city','live'], favorite: true, lyrics: '[Intro]\nAm  F  C  G\n\n[Verse]\n[Am]Ночной город не спит\n[F]И музыка звучит', modified: new Date().toISOString() },
+    { id: uid('song'), title: 'Северный ветер', artist: 'Neon Coast', key: 'Em', bpm: 82, duration: 264, tags: ['ballad'], favorite: false, lyrics: '[Verse]\nEm  C  G  D\n\n[Em]Северный ветер', modified: new Date().toISOString() },
+    { id: uid('song'), title: 'Эхо', artist: 'Neon Coast', key: 'C', bpm: 118, duration: 202, tags: ['pop'], favorite: false, lyrics: '[Chorus]\nC  G  Am  F\n\n[C]Эхо в пустом городе', modified: new Date().toISOString() },
+    { id: uid('song'), title: 'Тише воды', artist: 'Neon Coast', key: 'G', bpm: 74, duration: 251, tags: ['slow'], favorite: false, lyrics: '[Verse]\nG  D  Em  C\n\n[G]Тише воды', modified: new Date().toISOString() },
+    { id: uid('song'), title: '220 вольт', artist: 'Neon Coast', key: 'D', bpm: 132, duration: 196, tags: ['rock'], favorite: false, lyrics: '[Chorus]\nD  A  Bm  G\n\n[D]Двести двадцать вольт', modified: new Date().toISOString() },
+    { id: uid('song'), title: 'Маршрут построен', artist: 'Neon Coast', key: 'F#m', bpm: 108, duration: 225, tags: ['drive'], favorite: true, lyrics: '[Intro]\nF#m  D  A  E\n\n[F#m]Маршрут построен', modified: new Date().toISOString() }
+  ];
+  state.events = [
+    { id: uid('ev'), title: 'Репетиция', date: plus(1), time: '19:00', end: '21:00', type: 'rehearsal', location: 'Студия', status: 'confirmed', participantIds: state.members.map(m => m.id), setlistId: null },
+    { id: uid('ev'), title: 'Концерт', date: plus(5), time: '20:00', end: '22:30', type: 'gig', location: 'Клуб', status: 'confirmed', participantIds: state.members.map(m => m.id), setlistId: null }
+  ];
+  state.setlists = [{ id: uid('sl'), name: 'Демо-сет', eventId: state.events[1].id, items: state.songs.slice(0,4).map(s => ({ songId: s.id, note: '' })) }];
+  state.onboardingDone = true;
+  save(); render();
+  toast('Демо-данные загружены вручную', 'info');
+}
 
 /* ═══ 6. EVENTS ENGINE ═══ */
 function expand(from, to) {
@@ -1975,6 +1995,10 @@ document.addEventListener('click', function (e) {
     }
     case 'export': stop(); exportData(); break;
     case 'import': stop(); $('#fileIn').click(); break;
+    case 'demo': {
+      seedDemo();
+      break;
+    }
     case 'wipe': {
       stop();
       confirmBox('Удалить все данные?', 'Будут удалены песни, события, сет-листы, участники и настройки. Действие необратимо — сначала скачайте резервную копию.', function () {
