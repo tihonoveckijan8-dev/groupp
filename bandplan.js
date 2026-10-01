@@ -226,14 +226,6 @@ function normalizeState(d) {
   return state;
 }
 
-function isDemoState(s) {
-  const titles = ['Город не спит', 'Северный ветер', 'Эхо', 'Тише воды', '220 вольт', 'Маршрут построен'];
-  const names = ['Аня Соколова', 'Марк Гринёв', 'Тимур Валеев', 'Лена Ким'];
-  const demoSongCount = (s.songs || []).filter(x => titles.indexOf(x.title) >= 0 && x.artist === 'Neon Coast').length;
-  const demoMemberCount = (s.members || []).filter(x => names.indexOf(x.name) >= 0).length;
-  return demoSongCount >= 4 || demoMemberCount >= 3;
-}
-
 function load() {
   try {
     const raw = localStorage.getItem(KEY) || localStorage.getItem('bandplan.premium.v5') || localStorage.getItem('bandplan.premium.v4');
@@ -594,7 +586,7 @@ function render() {
     else html = '<div class="card">' + stateHTML('err', 'Раздел не найден', 'Проверьте адрес или вернитесь в расписание.', '<a class="btn btn-primary" href="#/calendar">Открыть расписание</a>') + '</div>';
     v.innerHTML = html + (actionBarHTML || '');
   } catch (err) {
-    v.innerHTML = '<div class="card">' + stateHTML('err', 'Не удалось отобразить раздел', 'Данные сохранены локально. Повторите попытку или вернитесь в расписание.', '<button class="btn btn-primary" type="button" data-act="reload-view">Повторить</button>') + '</div>';
+    v.innerHTML = '<div class="card">' + stateHTML('err', 'Не удалось отобразить раздел', 'Данные сохранены локально. Облако временно недоступно — повторите попытку позже.', '<button class="btn btn-primary" type="button" data-act="reload-view">Повторить</button>') + '</div>';
   }
   afterRender(r);
 }
@@ -624,7 +616,6 @@ function heroHTML() {
     heroMetric(state.setlists.length, plural(state.setlists.length, 'сет-лист', 'сет-листа', 'сет-листов')) +
     heroMetric(state.members.length, 'участников в составе') +
     '</div></div>' +
-    '' +
     '</div></section>';
 }
 function heroMetric(v, l) { return '<div class="hero-metric"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>'; }
