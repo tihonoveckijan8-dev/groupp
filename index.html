@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#E9E5F3">
+<meta name="description" content="BandPlan — операционная система музыкального коллектива: расписание, репертуар с аккордами и динамикой партий, сет-листы и сценический режим. Работает офлайн.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>BandPlan — Music Group OS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/latin-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/latin-600-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/latin-700-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/cyrillic-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/cyrillic-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/cyrillic-600-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/manrope@latest/cyrillic-700-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/cyrillic-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/cyrillic-500-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-700-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/cyrillic-400-normal.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="application-name" content="BandPlan">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BandPlan">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="bandplan.css">
+</head>
+<body data-route="calendar">
+
+<a class="skip-link" href="#view">Перейти к содержимому</a>
+
+<div class="app" id="app">
+  <!-- ══ SIDEBAR (≥1024px) ══ -->
+  <aside class="sidebar" aria-label="Основная навигация">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">BP</div>
+      <div class="brand-txt">
+        <div class="brand-name">BandPlan</div>
+        <div class="brand-sub" id="brandBand">Моя группа</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="sideNav"></nav>
+
+    <div class="side-profile" id="sideProfile"></div>
+
+    <div class="sidebar-foot">
+      <button class="btn btn-secondary btn-block" type="button" data-act="theme-toggle" id="themeQuick"></button>
+      <button class="btn btn-primary btn-block" type="button" data-act="scene-quick" id="sceneQuick"></button>
+      <p class="side-note">Данные хранятся только на этом устройстве</p>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+    <header class="topbar" id="topbar">
+      <div class="tb-inner">
+        <div class="tb-search" id="searchWrap">
+          <span class="tb-search-ic" id="searchIco" aria-hidden="true"></span>
+          <label class="sr-only" for="globalSearch">Глобальный поиск по песням, событиям, сет-листам и участникам</label>
+          <input id="globalSearch" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                 role="combobox" aria-expanded="false" aria-controls="searchDrop" aria-autocomplete="list"
+                 placeholder="Поиск: песни, события, сет-листы, участники">
+          <kbd class="tb-kbd">Ctrl K</kbd>
+          <button class="tb-clear" type="button" id="searchClear" data-act="search-clear" aria-label="Очистить поиск"></button>
+          <div class="search-drop" id="searchDrop" role="listbox" aria-label="Результаты поиска"></div>
+        </div>
+
+        <div class="tb-tools">
+          <button class="icon-btn" type="button" data-act="theme-toggle" id="tbTheme" aria-label="Переключить тему"></button>
+          <button class="icon-btn" type="button" data-act="nav" data-to="settings" id="tbCust" aria-label="Оформление и настройки"></button>
+          <button class="avatar-btn" type="button" id="tbAvatar" data-act="nav" data-to="settings" aria-label="Профиль и состав группы"></button>
+        </div>
+      </div>
+      <div class="netbar" id="netBar" role="status" hidden></div>
+    </header>
+
+    <div class="page-head" id="pageHead"></div>
+    <div class="content" id="view" tabindex="-1"></div>
+  </main>
+</div>
+
+<!-- ══ BOTTOM NAV (mobile) ══ -->
+<nav class="bottom-nav" id="botNav" aria-label="Навигация по разделам"></nav>
+
+<!-- ══ SCENE ══ -->
+<div class="scene" id="scene" role="dialog" aria-modal="true" aria-label="Сценический режим" aria-hidden="true">
+  <div class="scene-top">
+    <button class="sbtn" type="button" data-act="scene-prev" aria-label="Предыдущая песня"></button>
+    <div class="scene-title"><h2 id="scTitle">—</h2><p id="scMeta"></p></div>
+    <button class="sbtn" type="button" data-act="scene-close" aria-label="Закрыть сценический режим"></button>
+  </div>
+  <div class="scene-dyn" id="scDyn" aria-label="Динамика вашей партии"></div>
+  <div class="scene-body" id="scBody" tabindex="0"></div>
+  <div class="scene-bar" role="progressbar" aria-label="Прогресс программы"><i id="scBar"></i></div>
+  <div class="scene-ctrl">
+    <button class="sbtn" type="button" data-act="scene-auto" aria-label="Автопрокрутка"></button>
+    <div class="sctl"><button type="button" data-act="scene-speed" data-d="-15" aria-label="Медленнее">−</button><span id="scSpeed">60</span><button type="button" data-act="scene-speed" data-d="15" aria-label="Быстрее">+</button></div>
+    <div class="sctl"><button type="button" data-act="scene-font" data-d="-2" aria-label="Уменьшить шрифт">A−</button><span id="scFont">26</span><button type="button" data-act="scene-font" data-d="2" aria-label="Увеличить шрифт">A+</button></div>
+    <div class="sctl"><button type="button" data-act="scene-trans" data-d="-1" aria-label="Транспонировать ниже">♭</button><span id="scTrans">0</span><button type="button" data-act="scene-trans" data-d="1" aria-label="Транспонировать выше">♯</button></div>
+    <button class="sbtn" type="button" id="scChords" data-act="scene-chords" aria-pressed="true" aria-label="Показать или скрыть аккорды">Am</button>
+    <button class="sbtn" type="button" data-act="scene-next" aria-label="Следующая песня"></button>
+    <button class="sbtn" type="button" data-act="scene-fs" aria-label="Полноэкранный режим"></button>
+  </div>
+</div>
+
+<!-- ══ ONBOARDING ══ -->
+<div class="onb" id="onb" role="dialog" aria-modal="true" aria-label="Первоначальная настройка" aria-hidden="true"></div>
+
+<div class="overlay" id="modalOverlay" role="presentation"></div>
+<div class="toast-stack" id="toasts" role="region" aria-live="polite" aria-label="Уведомления"></div>
+<div class="print-area" id="printArea"></div>
+<input type="file" id="fileIn" accept="application/json,.json" hidden>
+<noscript><p class="noscript">Для работы BandPlan необходимо включить JavaScript в настройках браузера.</p></noscript>
+
+<script src="bandplan.js"></script>
+</body>
+</html>
