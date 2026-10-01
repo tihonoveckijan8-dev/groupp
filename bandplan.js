@@ -624,16 +624,8 @@ function heroHTML() {
     heroMetric(state.setlists.length, plural(state.setlists.length, 'сет-лист', 'сет-листа', 'сет-листов')) +
     heroMetric(state.members.length, 'участников в составе') +
     '</div></div>' +
-    '<div class="hero-visual" aria-hidden="true">' +
-    '<div class="hv-card"><div class="hv-row"><span class="hv-dot" style="background:var(--ok)"></span>' +
-    '<div class="grow"><div style="font-weight:600;font-size:13.5px">Репетиция · 19:00</div><div class="t-xs t-muted">База на Лиговском</div></div>' +
-    '<span class="badge b-ok">' + ic('check', 11) + 'Участвую</span></div></div>' +
-    '<div class="hv-card"><div class="cap" style="margin-bottom:8px">Динамика партии · вокал</div>' +
-    '<div class="hv-row" style="margin-bottom:8px"><span class="t-xs t-muted" style="width:64px">Куплет</span><span class="hv-bar"><i style="width:42%"></i></span><b class="num t-sm">mp</b></div>' +
-    '<div class="hv-row" style="margin-bottom:8px"><span class="t-xs t-muted" style="width:64px">Припев</span><span class="hv-bar"><i style="width:78%"></i></span><b class="num t-sm">f</b></div>' +
-    '<div class="hv-row"><span class="t-xs t-muted" style="width:64px">Финал</span><span class="hv-bar"><i style="width:100%"></i></span><b class="num t-sm">ff</b></div></div>' +
-    '<div class="hv-card"><div class="hv-row"><span class="badge b-muted num">Em</span><span class="t-sm t-2 grow nowrap">Город не спит</span><span class="badge b-muted num">104 BPM</span></div></div>' +
-    '</div></div></section>';
+    '' +
+    '</div></section>';
 }
 function heroMetric(v, l) { return '<div class="hero-metric"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>'; }
 function vCalendar() {
@@ -1588,7 +1580,7 @@ function applyAccentVars() {
 let onbStep = 0, onbData = null;
 function openOnboarding() {
   onbStep = 0;
-  onbData = { name: '', role: '', roles: [], bandName: '', bandDesc: '', participation: 'yes', members: [{ name: '', role: 'vocal', color: PALETTE[0] }], theme: 'light', accent: '#2547D0', demo: true };
+  onbData = { name: '', role: '', roles: [], bandName: '', bandDesc: '', participation: 'yes', members: [{ name: '', role: 'vocal', color: PALETTE[0] }], theme: 'light', accent: '#2547D0' };
   drawOnb(); $('#onb').classList.add('on');
 }
 function drawOnb() {
@@ -1620,9 +1612,7 @@ function drawOnb() {
       '<p class="lead">Оформление, роли и данные можно изменить в любой момент в разделе «Настройки».</p>' +
       '<div class="field"><span class="field-label">Тема</span><div class="seg" id="ob_theme">' +
       [['light', 'Светлая'], ['dark', 'Тёмная'], ['amoled', 'AMOLED']].map(t => '<button type="button" data-v="' + t[0] + '" class="' + (onbData.theme === t[0] ? 'on' : '') + '" data-accent="1">' + t[1] + '</button>').join('') + '</div></div>' +
-      '<div class="field"><span class="field-label">Стартовые данные</span><div class="row" style="gap:6px">' +
-      '<button type="button" class="chip' + (onbData.demo ? ' on' : '') + '" id="ob_demo_yes">' + ic('bolt', 13) + 'Загрузить демо (6 песен с динамикой)</button>' +
-      '<button type="button" class="chip' + (!onbData.demo ? ' on' : '') + '" id="ob_demo_no">' + ic('plus', 13) + 'Начать с чистого листа</button></div></div>';
+
   }
   h += '<div class="onb-foot">' + (onbStep > 0 ? '<button class="btn btn-secondary" type="button" id="ob_back">' + ic('left', 16) + 'Назад</button>' : '<span></span>') +
     (onbStep < 3 ? '<button class="btn btn-primary" type="button" id="ob_next">Продолжить' + ic('right', 16) + '</button>' : '<button class="btn btn-primary" type="button" id="ob_done">' + ic('check', 16) + 'Начать работу</button>') + '</div></div>';
@@ -1649,9 +1639,7 @@ function drawOnb() {
     }));
   }
   if (onbStep === 3) {
-    $$('#ob_theme button', el).forEach(b => b.addEventListener('click', () => { onbData.theme = b.getAttribute('data-v'); $$('#ob_theme button', el).forEach(x => x.classList.toggle('on', x === b)); }));
-    bind('ob_demo_yes', 'click', () => { onbData.demo = true; $('#ob_demo_yes').classList.add('on'); $('#ob_demo_no').classList.remove('on'); });
-    bind('ob_demo_no', 'click', () => { onbData.demo = false; $('#ob_demo_no').classList.add('on'); $('#ob_demo_yes').classList.remove('on'); });
+    $('#ob_theme button', el).forEach(b => b.addEventListener('click', () => { onbData.theme = b.getAttribute('data-v'); $('#ob_theme button', el).forEach(x => x.classList.toggle('on', x === b); }));
   }
   bind('ob_back', 'click', () => { collectStep(el); onbStep = Math.max(0, onbStep - 1); drawOnb(); });
   bind('ob_next', 'click', () => {
@@ -1701,7 +1689,6 @@ function finishOnboarding() {
   state.members = onbData.members.filter(m => m.name.trim()).map(function (m, i) { return { id: uid('m'), name: m.name.trim(), role: m.role, color: m.color || PALETTE[i % PALETTE.length], note: '' }; });
   if (!state.members.some(m => m.name === state.profile.name)) state.members.unshift({ id: uid('m'), name: state.profile.name, role: state.profile.role, roles: myRoles(), color: onbData.accent, note: 'это вы' });
   state.onboardingDone = true;
-  if (onbData.demo) seedDemo();
   applyTheme(); applyAccentVars(); save();
   $('#onb').classList.remove('on'); $('#onb').setAttribute('aria-hidden', 'true');
   go('#/calendar'); render();
