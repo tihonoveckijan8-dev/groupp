@@ -1298,8 +1298,8 @@ h1,h2,h3,h4,p,.sub,.nm,.rl,.ev-title,.ev-meta,.sd-t,.sd-m,.brand-name,.brand-sub
   border: 1px solid var(--accent);
   border-left: 4px solid var(--accent);
   border-radius: 10px;
-  background: var(--accent-ring);
-  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 20%, var(--scene-bg));
+  color: var(--scene-fg) !important;
   font-family: var(--font);
   font-size: clamp(13px, .58em, 19px) !important;
   font-weight: 850 !important;
