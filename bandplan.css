@@ -1280,3 +1280,77 @@ h1,h2,h3,h4,p,.sub,.nm,.rl,.ev-title,.ev-meta,.sd-t,.sd-m,.brand-name,.brand-sub
 
 /* тёмные темы: цвет типа события чуть светлее */
 [data-theme="dark"] .ev-row[style*="--info"],[data-theme="amoled"] .ev-row[style*="--info"]{--ev-c:#7C97F5!important}
+
+
+/* BandPlan Stage readability — scoped to Stage Mode only */
+#scene .scene-body {
+  color: var(--raw-color-019) !important;
+  line-height: 1.85 !important;
+  overflow-wrap: anywhere;
+}
+#scene .scene-body .ln.sec {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 1.7em 0 .55em;
+  padding: .42em .8em;
+  border: 1px solid var(--accent);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-ring);
+  color: var(--accent) !important;
+  font-family: var(--font);
+  font-size: clamp(13px, .58em, 19px) !important;
+  font-weight: 850 !important;
+  line-height: 1.35;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  text-shadow: none !important;
+}
+#scene .scene-body b.ch {
+  display: inline-block;
+  position: relative;
+  margin: 0 .06em;
+  padding: .02em .2em;
+  border-radius: 5px;
+  color: var(--accent) !important;
+  background: var(--accent-ring);
+  font-family: var(--mono);
+  font-size: 1.04em;
+  font-weight: 900 !important;
+  line-height: 1.35;
+  text-shadow: none !important;
+  -webkit-text-stroke: .2px currentColor;
+}
+#scene .scene-body b.ch.inl {
+  border: 1px solid var(--accent) !important;
+  background: var(--accent-ring) !important;
+  padding: .02em .24em;
+}
+#scene .scene-body .scene-dyn-note {
+  display: block;
+  margin: .15em 0 .65em;
+  padding: .35em .65em;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 7px 7px 0;
+  background: var(--raw-color-034);
+  font-family: var(--font);
+  font-size: .58em;
+  line-height: 1.5;
+  white-space: normal;
+}
+#scene .scene-body .scene-dyn-note b {
+  color: var(--accent);
+  font-weight: 800;
+}
+@media (max-width: 640px) {
+  #scene .scene-body .ln.sec {
+    margin-top: 1.45em;
+    padding: .4em .65em;
+    font-size: clamp(12px, .62em, 16px) !important;
+  }
+  #scene .scene-body b.ch {
+    padding-inline: .16em;
+  }
+}
