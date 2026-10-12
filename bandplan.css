@@ -1354,3 +1354,68 @@ h1,h2,h3,h4,p,.sub,.nm,.rl,.ev-title,.ev-meta,.sd-t,.sd-m,.brand-name,.brand-sub
     padding-inline: .16em;
   }
 }
+
+
+/* BandPlan tablet ergonomics — scoped to tablet viewports; calendar internals intentionally untouched. */
+@media (min-width: 600px) and (max-width: 1023px) {
+  html, body { min-width: 0; }
+  .app {
+    grid-template-columns: 76px minmax(0, 1fr) !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .sidebar {
+    width: 76px !important;
+    min-width: 76px !important;
+    padding-inline: 10px !important;
+    gap: 12px !important;
+  }
+  .sidebar .brand { justify-content: center; padding-inline: 0 !important; }
+  .sidebar .brand-txt,
+  .sidebar .side-profile,
+  .sidebar .sidebar-foot .btn { display: none !important; }
+  .sidebar .brand-mark { margin-inline: auto; }
+  .sidebar .nav { width: 100%; }
+  .sidebar .nav a,
+  .sidebar .nav button,
+  .sidebar .nav [role="button"] {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 6px !important;
+  }
+  .main { min-width: 0; width: 100%; }
+  .page-head, .content, #view {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .content, #view { padding-inline: clamp(14px, 2.4vw, 24px); }
+  .content > *, #view > * { min-width: 0; max-width: 100%; }
+  .content :is(input, select, textarea), #view :is(input, select, textarea) {
+    max-width: 100%; box-sizing: border-box;
+  }
+  .content :is(button, .btn), #view :is(button, .btn) { max-width: 100%; }
+  .content :is(.card, .panel, .modal, .sheet), #view :is(.card, .panel, .modal, .sheet) {
+    min-width: 0; max-width: 100%; box-sizing: border-box;
+  }
+  .bottom-nav { display: none !important; }
+}
+
+/* Tablet landscape: preserve the full navigation labels while keeping the work area usable. */
+@media (min-width: 1024px) and (max-width: 1280px) and (pointer: coarse) {
+  .app { grid-template-columns: 216px minmax(0, 1fr); }
+  .sidebar { width: 216px; min-width: 216px; padding-inline: 14px; }
+  .main, .content, #view { min-width: 0; }
+  .content, #view { padding-inline: clamp(16px, 2vw, 26px); }
+  .page-head { gap: 12px; flex-wrap: wrap; }
+  .content :is(.card, .panel), #view :is(.card, .panel) { min-width: 0; }
+}
+
+/* Tablet landscape with limited height: avoid oversized headers stealing the working area. */
+@media (min-width: 600px) and (max-width: 1280px) and (max-height: 600px) {
+  .page-head { padding-block: 8px; }
+  .content, #view { padding-block: 12px; }
+  .sidebar { padding-block: 12px; }
+}
