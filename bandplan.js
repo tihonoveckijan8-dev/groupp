@@ -788,7 +788,7 @@ function vSongs() {
       (s.duration ? '<span class="badge b-muted num">' + ic('clock', 11) + fmtDur(s.duration) + '</span>' : '') +
       (dyn ? '<span class="badge b-warn">' + ic('wave', 11) + dyn + ' парт.</span>' : '<span class="badge b-muted">' + ic('wave', 11) + 'без динамики</span>') +
       (s.tags || []).slice(0, 2).map(t => '<span class="badge b-muted">' + esc(t) + '</span>').join('') +
-      (used ? '<span class="badge b-ok">' + ic('list', 11) + used + '</span>' : '') + '</div>' +
+      '</div>' +
       '<div class="song-acts">' +
       '<button class="btn btn-secondary btn-sm" type="button" data-act="scene-song" data-id="' + s.id + '" aria-label="Открыть на сцене">' + ic('monitor', 15) + '</button>' +
       '<button class="btn btn-secondary btn-sm" type="button" data-act="to-setlist" data-id="' + s.id + '" aria-label="Добавить в сет-лист">' + ic('list', 15) + '</button>' +
