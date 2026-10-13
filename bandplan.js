@@ -777,7 +777,6 @@ function vSongs() {
   }
   h += '<div class="grid g3">';
   list.forEach(function (s, i) {
-    const used = state.setlists.filter(sl => (sl.items || []).some(it => it.songId === s.id)).length;
     const dyn = (s.dynamics && s.dynamics.instruments || []).length;
     h += '<article class="song-card rise" style="animation-delay:' + Math.min(i * 22, 180) + 'ms" data-act="open-song" data-id="' + s.id + '" role="link" tabindex="0" aria-label="Открыть песню ' + esc(s.title) + '">' +
       '<button class="fav' + (s.fav ? ' on' : '') + '" type="button" data-act="fav" data-id="' + s.id + '" aria-pressed="' + !!s.fav + '" aria-label="' + (s.fav ? 'Убрать из избранного' : 'В избранное') + '">' + ic('star', 18) + '</button>' +
