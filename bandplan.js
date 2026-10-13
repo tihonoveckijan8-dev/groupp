@@ -859,7 +859,6 @@ function vSong(id) {
   if (!s) return '<div class="card">' + stateHTML('err', 'Песня не найдена', 'Возможно, она была удалена или ссылка устарела.', '<a class="btn btn-primary" href="#/songs">Вернуться в репертуар</a>') + '</div>';
   const tr = ui.detailTrans[s.id] || 0;
   const chords = extractChords(s.lyrics).map(c => transposeChord(c, tr));
-  const used = state.setlists.filter(sl => (sl.items || []).some(it => it.songId === s.id));
   const myRole = myRoles()[0] || '';
   const mine = s.dynamics ? myRoles().filter(r => (s.dynamics.instruments || []).indexOf(r) >= 0) : [];
   const hasMy = mine.length > 0;
@@ -897,9 +896,6 @@ function vSong(id) {
     '<div class="row mt-s"><button class="btn btn-danger btn-block" type="button" data-act="song-del" data-id="' + s.id + '">' + ic('trash', 16) + 'Удалить песню</button></div></section>';
   if (chords.length) h += '<section class="card rise" style="animation-delay:.13s"><div class="card-h"><div><h2>Используемые аккорды</h2><div class="sub">' + chords.length + ' уникальных</div></div></div>' +
     '<div class="row" style="gap:6px">' + chords.map(c => '<span class="badge b-muted num" style="font-size:var(--fs-body-s);padding:6px 12px">' + esc(c) + '</span>').join('') + '</div></section>';
-  h += '<section class="card rise" style="animation-delay:.16s"><div class="card-h"><div><h2>Входит в сет-листы</h2><div class="sub">' + used.length + '</div></div></div>' +
-    (used.length ? used.map(sl => '<a class="ev-row" href="#/setlist/' + sl.id + '"><div class="ev-date" style="width:48px"><div class="d" style="font-size:var(--fs-body)">' + (sl.items || []).length + '</div></div><div class="ev-body"><h3 class="ev-title">' + esc(sl.name) + '</h3><div class="ev-meta"><span>' + ic('clock', 12) + fmtDur(setlistDur(sl)) + '</span></div></div></a>').join('')
-      : '<p class="t-sm t-muted">Песня пока не добавлена ни в один сет-лист.</p>') + '</section>';
   return h + '</div></div>';
 }
 const infoRow = (l, v) => '<div class="info-row"><span class="l">' + esc(l) + '</span><span class="v">' + (v || '—') + '</span></div>';
