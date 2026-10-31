@@ -35,7 +35,10 @@
     if (title) title.textContent = mode === 'signup' ? 'Создать аккаунт' : 'С возвращением';
     if (submit) submit.textContent = mode === 'signup' ? 'Зарегистрироваться' : 'Войти';
     if (toggle) toggle.textContent = mode === 'signup' ? 'У меня уже есть аккаунт' : 'Создать аккаунт';
-    if (hint) hint.textContent = mode === 'signup' ? 'После регистрации подтвердите адрес электронной почты.' : 'Войдите, чтобы открыть свои группы и данные BandPlan.';
+    if (hint) hint.textContent = mode === 'signup' ? 'После регистрации подтвердите адрес электронной почты.' : (mode === 'reset' ? 'Укажите новый пароль для своего аккаунта.' : 'Войдите, чтобы открыть свои группы и данные BandPlan.');
+    if (toggle) toggle.hidden = mode === 'reset';
+    const reset = $('#authReset'); if (reset) reset.hidden = mode === 'reset';
+    const password = $('#authPassword'); if (password) { password.autocomplete = mode === 'reset' ? 'new-password' : 'current-password'; password.placeholder = mode === 'reset' ? 'Новый пароль' : 'Не менее 8 символов'; }
     authMessage('');
   };
 
@@ -44,6 +47,7 @@
     const { data, error } = await sb.auth.getSession();
     if (error) throw error;
     if (!data.session) { showAuth(); return { user: null, groups: [], userState: {} }; }
+    if (location.hash.indexOf('type=recovery') >= 0) { showAuth(); setMode('reset'); return { user: null, groups: [], userState: {}, recovery: true }; }
     hideAuth();
     const user = data.session.user;
     const [userStateRes, groupsRes] = await Promise.all([
@@ -172,7 +176,13 @@
     if (!email || !password) { authMessage('Введите email и пароль.', true); return; }
     submit.disabled = true;
     try {
-      if (authMode === 'signup') {
+      if (authMode === 'reset') {
+        const { error } = await sb.auth.updateUser({ password });
+        if (error) throw error;
+        authMessage('Пароль обновлён. Выполняется вход…');
+        history.replaceState({}, document.title, location.origin + location.pathname);
+        location.reload();
+      } else if (authMode === 'signup') {
         const { data, error } = await sb.auth.signUp({
           email, password, options: { emailRedirectTo: location.href.split('?')[0] }
         });
@@ -200,7 +210,7 @@
     if (reset) reset.addEventListener('click', async () => {
       const email = ($('#authEmail').value || '').trim();
       if (!email) { authMessage('Сначала укажите email.', true); return; }
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('?')[0] });
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
       authMessage(error ? error.message : 'Ссылка для смены пароля отправлена на почту.', !!error);
     });
     setMode('login');
