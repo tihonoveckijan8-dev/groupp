@@ -231,6 +231,8 @@ function cloudScheduleSave() {
 }
 async function cloudPersistNow() {
   if (!cloudUser || !window.BandPlanCloud) return;
+  const ownMember = state.members.find(m => m.accountId === cloudUser.id || m.id === cloudUser.id);
+  if (cloudActiveGroupId && ownMember) { ownMember.name = state.profile.name || ownMember.name; ownMember.roles = state.profile.roles || ownMember.roles || []; ownMember.role = state.profile.role || ownMember.role || 'other'; }
   const current = cloudSnapshot();
   if (cloudActiveGroupId) cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot, cloudUser.id);
   cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, {
@@ -316,6 +318,7 @@ async function cloudStart() {
   cloudUser = boot.user; cloudUserState = boot.userState || {}; cloudGroups = boot.groups || [];
   state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : state.personalSongs || [];
   state.personalSetlists = Array.isArray(cloudUserState.personalSetlists) ? cloudUserState.personalSetlists : state.personalSetlists || [];
+  if (cloudUserState.onboardingDone !== undefined) state.onboardingDone = !!cloudUserState.onboardingDone;
   if (cloudGroups.length) {
     const preferred = cloudUserState.activeGroupId;
     const active = cloudGroups.find(g => g.group_id === preferred) || cloudGroups[0];
