@@ -1329,10 +1329,12 @@ function moveItem(slId, itemId, at) {
 /* ═══ 14. SETTINGS ═══ */
 function vSettings() {
   const s = state.settings, p = state.profile;
+  const activeGroup = cloudGroups.find(g => g.group_id === cloudActiveGroupId);
+  const canRenameGroup = !cloudActiveGroupId || (activeGroup && activeGroup.role === 'owner');
   let h = '<div class="split2">';
   h += '<section class="card rise"><div class="card-h"><div><h2>Профиль и роль</h2><div class="sub">Роль определяет, какая динамика песни подсвечивается</div></div></div>' +
     '<div class="f2"><div class="field"><label class="field-label" for="setName">Ваше имя</label><input class="input" id="setName" maxlength="50" value="' + esc(p.name) + '" placeholder="Имя и фамилия"></div>' +
-    '<div class="field"><label class="field-label" for="setBand">Название группы</label><input class="input" id="setBand" maxlength="50" value="' + esc(p.bandName || '') + '" placeholder="Neon Coast"></div></div>' +
+    '<div class="field"><label class="field-label" for="setBand">Название группы</label><input class="input" id="setBand" maxlength="50" value="' + esc(p.bandName || '') + '" placeholder="Neon Coast"' + (canRenameGroup ? '' : ' readonly aria-readonly="true"') + '></div></div>' +
     '<div class="field"><label class="field-label" for="setBandDesc">О группе</label><textarea class="input" id="setBandDesc" rows="2" style="font-family:var(--font);min-height:68px" placeholder="Направление, состав, задачи">' + esc(p.bandDesc || '') + '</textarea></div>' +
     '<div class="field"><span class="field-label">Ваши роли / инструменты (можно несколько)</span><div class="row" style="gap:6px">' +
     ROLES.map(r => '<button class="chip' + (myRoles().indexOf(r.k) >= 0 ? ' on' : '') + '" type="button" data-act="role-set" data-v="' + r.k + '" aria-pressed="' + (myRoles().indexOf(r.k) >= 0) + '">' + ic(r.icon, 14) + esc(r.label) + '</button>').join('') + '</div></div>' +
