@@ -55,11 +55,11 @@
     return { user, userState: userStateRes.data && userStateRes.data.state || {}, groups: groupsRes.data || [] };
   }
 
-  async function loadGroup(groupId) {
+  async function loadGroup(groupId, userId) {
     const [stateRes, groupRes, accountRes] = await Promise.all([
       sb.from('bandplan_group_state').select('state').eq('group_id', groupId).maybeSingle(),
       sb.from('bandplan_groups').select('id,name,owner_id').eq('id', groupId).single(),
-      sb.from('bandplan_accounts').select('display_name,roles,personal_settings').maybeSingle()
+      sb.from('bandplan_accounts').select('display_name,roles,personal_settings').eq('user_id', userId).maybeSingle()
     ]);
     if (stateRes.error) throw stateRes.error;
     if (groupRes.error) throw groupRes.error;
