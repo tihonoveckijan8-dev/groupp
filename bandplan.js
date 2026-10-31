@@ -253,6 +253,18 @@ async function cloudPersistNow() {
   if (cloudActiveGroupId) cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot, cloudUser.id);
   return current;
 }
+async function cloudPersistParticipation(event) {
+  if (!cloudUser || !cloudActiveGroupId || !event || !window.BandPlanCloud) return;
+  clearTimeout(cloudSaveTimer);
+  await cloudPersistNow();
+  const { error } = await BandPlanCloud.client.rpc('bandplan_set_event_participation', {
+    p_event_id: event.id,
+    p_status: event.myStatus || null,
+    p_updated_at: new Date().toISOString(),
+    p_group_id: cloudActiveGroupId
+  });
+  if (error) throw error;
+}
 function cloudUpdateButton() {
   const b = $('#groupSwitchBtn');
   if (!b) return;
@@ -2016,8 +2028,7 @@ document.addEventListener('click', function (e) {
       const data = readEventForm(id); if (!data) break;
       if (id) { const i = state.events.findIndex(x => x.id === id); if (i >= 0) state.events[i] = data; } else state.events.push(data);
       ui.selDate = data.date; ui.month = new Date(data.date + 'T00:00:00');
-      modalDirty = false; hardClose(modalRoot); commit();
-      toast(id ? 'Изменения события сохранены' : 'Событие добавлено в расписание', 'ok');
+      modalDirty = false; hardClose(modalRoot); commit();\n      cloudPersistParticipation(data).catch(e => toast('Не удалось сохранить ваш статус участия: ' + (e.message || 'ошибка'), 'err', 5000));\n      toast(id ? 'Изменения события сохранены' : 'Событие добавлено в расписание', 'ok');
       break;
     }
     case 'event-del': {
@@ -2041,8 +2052,7 @@ document.addEventListener('click', function (e) {
       stop();
       const ev = evById(id); if (!ev) break;
       const v = el.getAttribute('data-v');
-      ev.myStatus = ev.myStatus === v ? '' : v;
-      commit();
+      ev.myStatus = ev.myStatus === v ? '' : v;\n      commit();\n      cloudPersistParticipation(ev).catch(e => toast('Не удалось сохранить ваш статус участия: ' + (e.message || 'ошибка'), 'err', 5000));
       if (ev.myStatus) toast('Ваше участие: ' + ({ yes: 'участвую', maybe: 'под вопросом', no: 'не участвую' }[ev.myStatus]), 'ok', 2400);
       break;
     }
