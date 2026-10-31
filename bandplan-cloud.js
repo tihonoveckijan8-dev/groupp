@@ -131,9 +131,10 @@
         let chosen = prior && remoteItem && JSON.stringify(normalize(key, item)) === JSON.stringify(normalize(key, prior))
           ? remoteItem : item;
         if (key === 'events') {
-          chosen = Object.assign({}, chosen, {
-            participation: Object.assign({}, remoteItem && remoteItem.participation || {}, item.participation || {})
-          });
+          const participation = Object.assign({}, remoteItem && remoteItem.participation || {});
+          if (userId) participation[userId] = item.participation && item.participation[userId] || '';
+          else Object.assign(participation, item.participation || {});
+          chosen = Object.assign({}, chosen, { participation });
         }
         merged.push(chosen);
       }
