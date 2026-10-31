@@ -1246,7 +1246,13 @@ function vSettings() {
       '<button class="icon-btn" type="button" data-act="mem-del" data-id="' + m.id + '" aria-label="Удалить участника">' + ic('trash', 15) + '</button></div>';
   });
   h += '</section>';
-\n  h += '<section class="card rise workspace-settings"><div class="card-h"><div><h2>Рабочие пространства</h2><div class="sub">Общие песни, события и сет-листы нескольких групп</div></div></div>' +\n    '<p class="t-sm t-muted mb">' + (cloudActiveGroupId ? 'Активная группа: ' + esc(state.profile.bandName) : 'Сейчас открыто личное пространство. Подключите группу, чтобы совместно работать с музыкантами.') + '</p>' +\n    '<button class="btn btn-secondary btn-block" type="button" data-act="group-menu">' + ic('users', 16) + 'Управление группами</button>' +\n    '<button class="btn btn-secondary btn-block mt-s" type="button" data-act="sign-out">' + ic('x', 16) + 'Выйти из аккаунта (' + esc(cloudUser ? cloudUser.email : '') + ')</button></section>';\n\n  h += '<section class="card rise" style="animation-delay:.07s;grid-column:1/-1"><div class="card-h"><div><h2>' + ic('palette', 18) + ' Оформление интерфейса</h2><div class="sub">Изменения применяются сразу и сохраняются на устройстве</div></div></div>' +
+
+  h += '<section class="card rise workspace-settings"><div class="card-h"><div><h2>Рабочие пространства</h2><div class="sub">Общие песни, события и сет-листы нескольких групп</div></div></div>' +
+    '<p class="t-sm t-muted mb">' + (cloudActiveGroupId ? 'Активная группа: ' + esc(state.profile.bandName) : 'Сейчас открыто личное пространство. Подключите группу, чтобы совместно работать с музыкантами.') + '</p>' +
+    '<button class="btn btn-secondary btn-block" type="button" data-act="group-menu">' + ic('users', 16) + 'Управление группами</button>' +
+    '<button class="btn btn-secondary btn-block mt-s" type="button" data-act="sign-out">' + ic('x', 16) + 'Выйти из аккаунта (' + esc(cloudUser ? cloudUser.email : '') + ')</button></section>';
+
+  h += '<section class="card rise" style="animation-delay:.07s;grid-column:1/-1"><div class="card-h"><div><h2>' + ic('palette', 18) + ' Оформление интерфейса</h2><div class="sub">Изменения применяются сразу и сохраняются на устройстве</div></div></div>' +
     '<div class="split2"><div>' +
     '<div class="field"><span class="field-label">Тема</span><div class="seg">' +
     [['light', 'Светлая', 'sun'], ['dark', 'Тёмная', 'moon'], ['amoled', 'AMOLED', 'bolt']].map(t => '<button type="button" data-act="theme-set" data-v="' + t[0] + '" class="' + (s.theme === t[0] ? 'on' : '') + '" aria-pressed="' + (s.theme === t[0]) + '" data-accent="1">' + ic(t[2], 14) + t[1] + '</button>').join('') + '</div></div>' +
