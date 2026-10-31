@@ -324,7 +324,9 @@ async function cloudStart() {
     }
     await cloudLoadGroup(active.group_id);
   } else {
+    state.profile = Object.assign(defaults().profile, state.profile, cloudUserState.profile || {});
     state.profile.name = state.profile.name || (cloudUser.email || '').split('@')[0];
+    state.settings = Object.assign(defaults().settings, state.settings, cloudUserState.settings || {});
     cloudUpdateButton();
   }
   return true;
