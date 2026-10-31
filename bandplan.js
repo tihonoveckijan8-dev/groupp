@@ -100,15 +100,18 @@ function isChordLine(l) {
 }
 function transposeLyrics(text, n) {
   if (!n) return text || '';
-  return String(text || '').split('\n').map(function (l) {
+  return String(text || '').split('
+').map(function (l) {
     if (isSection(l)) return l;
     if (isChordLine(l)) return l.replace(/[^\s]+/g, t => isChord(t) ? transposeChord(t, n) : t);
     return l.replace(/\[([A-G][^\]\s]*)\]/g, (m, c) => isChord(c) ? '[' + transposeChord(c, n) + ']' : m);
-  }).join('\n');
+  }).join('
+');
 }
 function renderLyrics(text, n) {
   const out = [];
-  String(text || '').split('\n').forEach(function (line) {
+  String(text || '').split('
+').forEach(function (line) {
     if (state.settings.showChords === false) line = line.replace(/\[([A-G][^\]\s]*)\]/g, (m, c) => isChord(c) ? '' : m);
     if (!line.trim()) { out.push('<span class="ln"> </span>'); return; }
     if (isSection(line)) { out.push('<span class="ln sec">' + esc(line.trim().slice(1, -1)) + '</span>'); return; }
@@ -125,7 +128,8 @@ function renderLyrics(text, n) {
 }
 function extractChords(text) {
   const out = [], seen = {};
-  String(text || '').split('\n').forEach(function (l) {
+  String(text || '').split('
+').forEach(function (l) {
     if (isSection(l)) return;
     if (isChordLine(l)) { l.trim().split(/\s+/).forEach(t => { if (isChord(t) && !seen[t]) { seen[t] = 1; out.push(t); } }); return; }
     const re = /\[([A-G][^\]\s]*)\]/g; let m;
@@ -135,7 +139,8 @@ function extractChords(text) {
 }
 function extractSections(text) {
   const out = [];
-  String(text || '').split('\n').forEach(function (l) {
+  String(text || '').split('
+').forEach(function (l) {
     const m = /^\s*\[([^\]]+)\]\s*$/.exec(l);
     if (m && !isChord(m[1].trim()) && out.indexOf(m[1].trim()) < 0) out.push(m[1].trim());
   });
@@ -401,7 +406,14 @@ async function cloudCopyInvite() {
 
 
 function commit() { save(); render(); }
-const songById = id => state.songs.find(s => s.id === id) || state.personalSongs.find(s => s.id === id);\nconst songCollectionFor = id => state.songs.some(s => s.id === id) ? state.songs : state.personalSongs;\nconst activeSongs = () => ui.songScope === 'personal' ? state.personalSongs : state.songs;\nconst evById = id => state.events.find(e => e.id === id);\nconst slById = id => state.setlists.find(s => s.id === id) || state.personalSetlists.find(s => s.id === id);\nconst setlistCollectionFor = id => state.setlists.some(s => s.id === id) ? state.setlists : state.personalSetlists;\nconst activeSetlists = () => ui.setlistScope === 'personal' ? state.personalSetlists : state.setlists;\nconst isPersonalSetlist = id => state.personalSetlists.some(s => s.id === id);
+const songById = id => state.songs.find(s => s.id === id) || state.personalSongs.find(s => s.id === id);
+const songCollectionFor = id => state.songs.some(s => s.id === id) ? state.songs : state.personalSongs;
+const activeSongs = () => ui.songScope === 'personal' ? state.personalSongs : state.songs;
+const evById = id => state.events.find(e => e.id === id);
+const slById = id => state.setlists.find(s => s.id === id) || state.personalSetlists.find(s => s.id === id);
+const setlistCollectionFor = id => state.setlists.some(s => s.id === id) ? state.setlists : state.personalSetlists;
+const activeSetlists = () => ui.setlistScope === 'personal' ? state.personalSetlists : state.setlists;
+const isPersonalSetlist = id => state.personalSetlists.some(s => s.id === id);
 const memById = id => state.members.find(m => m.id === id);
 
 /* ═══ 6. DEMO ═══ */
@@ -1006,7 +1018,9 @@ function importTemplateToGroup(id) {
 
 function vSongs() {
   const list = filteredSongs(), tags = allTags();
-  let h = '<div class="scope-switch"><button type="button" data-act="song-scope" data-v="group" class="' + (ui.songScope === 'group' ? 'on' : '') + '">Репертуар группы <span>' + state.songs.length + '</span></button><button type="button" data-act="song-scope" data-v="personal" class="' + (ui.songScope === 'personal' ? 'on' : '') + '">Моя библиотека <span>' + state.personalSongs.length + '</span></button></div>' +\n    '<div class="toolbar">' +\n    '<div class="tb-search grow">' + ic('search', 18) + '<label class="sr-only" for="songQ">Поиск песен</label>'
+  let h = '<div class="scope-switch"><button type="button" data-act="song-scope" data-v="group" class="' + (ui.songScope === 'group' ? 'on' : '') + '">Репертуар группы <span>' + state.songs.length + '</span></button><button type="button" data-act="song-scope" data-v="personal" class="' + (ui.songScope === 'personal' ? 'on' : '') + '">Моя библиотека <span>' + state.personalSongs.length + '</span></button></div>' +
+    '<div class="toolbar">' +
+    '<div class="tb-search grow">' + ic('search', 18) + '<label class="sr-only" for="songQ">Поиск песен</label>'
     '<input id="songQ" type="search" placeholder="Название, автор, текст, тег" value="' + esc(ui.songQuery) + '" style="border:none;background:none;outline:none;font-size:var(--fs-body-s);flex:1;min-width:0;box-shadow:none">' +
     (ui.songQuery ? '<button class="icon-btn" type="button" data-act="song-clear" aria-label="Очистить поиск" style="width:34px;height:34px">' + ic('x', 15) + '</button>' : '') + '</div>' +
     '<button class="btn ' + (songFilterActive() ? 'btn-primary' : 'btn-secondary') + '" type="button" data-act="song-filter-open" aria-label="Фильтры">' + ic('filter', 17) + '<span class="btn-lbl">Фильтры</span></button></div>';
@@ -1019,9 +1033,14 @@ function vSongs() {
       (ui.songSort !== 'title' ? '<button class="chip" type="button" data-act="song-sort-reset">' + esc({ artist: 'по исполнителю', key: 'по тональности', bpm: 'по темпу', added: 'недавние' }[ui.songSort] || 'сортировка') + '<span class="rm">×</span></button>' : '') +
       '<button class="btn btn-tertiary btn-sm" type="button" data-act="song-reset">Сбросить</button></div>';
   }
-  const sourceSongs = activeSongs();\n  h += '<p class="t-sm t-muted mb">' + list.length + ' ' + plural(list.length, 'песня', 'песни', 'песен') + ' из ' + sourceSongs.length + '</p>';
+  const sourceSongs = activeSongs();
+  h += '<p class="t-sm t-muted mb">' + list.length + ' ' + plural(list.length, 'песня', 'песни', 'песен') + ' из ' + sourceSongs.length + '</p>';
   if (!list.length) {
-    return h + '<div class="card">' + stateHTML(sourceSongs.length ? 'search' : 'empty',\n      sourceSongs.length ? 'Ничего не найдено' : (ui.songScope === 'personal' ? 'Личная библиотека пока пуста' : 'В репертуаре пока нет песен'),\n      sourceSongs.length ? 'Попробуйте короткий запрос, снимите часть фильтров или сбросьте их полностью.' : (ui.songScope === 'personal' ? 'Сохраняйте здесь песни, которые принадлежат лично вам. Затем копируйте их в нужные группы.' : 'Добавьте первую песню: текст, аккорды отдельной строкой, тональность, темп и динамику партий по инструментам.'),\n      sourceSongs.length ? '<button class="btn btn-secondary" type="button" data-act="song-reset">Сбросить фильтры</button><button class="btn btn-primary" type="button" data-act="new-song">Добавить песню</button>'\n        : '<button class="btn btn-primary" type="button" data-act="new-song">' + ic('plus', 17) + 'Добавить первую песню</button>') + '</div>';
+    return h + '<div class="card">' + stateHTML(sourceSongs.length ? 'search' : 'empty',
+      sourceSongs.length ? 'Ничего не найдено' : (ui.songScope === 'personal' ? 'Личная библиотека пока пуста' : 'В репертуаре пока нет песен'),
+      sourceSongs.length ? 'Попробуйте короткий запрос, снимите часть фильтров или сбросьте их полностью.' : (ui.songScope === 'personal' ? 'Сохраняйте здесь песни, которые принадлежат лично вам. Затем копируйте их в нужные группы.' : 'Добавьте первую песню: текст, аккорды отдельной строкой, тональность, темп и динамику партий по инструментам.'),
+      sourceSongs.length ? '<button class="btn btn-secondary" type="button" data-act="song-reset">Сбросить фильтры</button><button class="btn btn-primary" type="button" data-act="new-song">Добавить песню</button>'
+        : '<button class="btn btn-primary" type="button" data-act="new-song">' + ic('plus', 17) + 'Добавить первую песню</button>') + '</div>';
   }
   h += '<div class="grid g3">';
   list.forEach(function (s, i) {
@@ -1039,7 +1058,8 @@ function vSongs() {
       '<div class="song-acts">' +
       '<button class="btn btn-secondary btn-sm" type="button" data-act="scene-song" data-id="' + s.id + '" aria-label="Открыть на сцене">' + ic('monitor', 15) + '</button>' +
       '<button class="btn btn-secondary btn-sm" type="button" data-act="to-setlist" data-id="' + s.id + '" aria-label="Добавить в сет-лист">' + ic('list', 15) + '</button>' +
-      '<button class="btn btn-secondary btn-sm" type="button" data-act="print-song" data-id="' + s.id + '" aria-label="Печать">' + ic('print', 15) + '</button>' +\n      (ui.songScope === 'personal' ? '<button class="btn btn-secondary btn-sm" type="button" data-act="song-copy-group" data-id="' + s.id + '" title="Копировать в активную группу">' + ic('copy', 15) + '</button>' : '<button class="btn btn-secondary btn-sm" type="button" data-act="song-copy-personal" data-id="' + s.id + '" title="Сохранить в личную библиотеку">' + ic('inbox', 15) + '</button>') +
+      '<button class="btn btn-secondary btn-sm" type="button" data-act="print-song" data-id="' + s.id + '" aria-label="Печать">' + ic('print', 15) + '</button>' +
+      (ui.songScope === 'personal' ? '<button class="btn btn-secondary btn-sm" type="button" data-act="song-copy-group" data-id="' + s.id + '" title="Копировать в активную группу">' + ic('copy', 15) + '</button>' : '<button class="btn btn-secondary btn-sm" type="button" data-act="song-copy-personal" data-id="' + s.id + '" title="Сохранить в личную библиотеку">' + ic('inbox', 15) + '</button>') +
       '<button class="btn btn-primary btn-sm song-open" type="button" data-act="open-song" data-id="' + s.id + '"><span class="btn-txt">Открыть</span></button></div></article>';
   });
   return h + '</div>';
@@ -1149,9 +1169,14 @@ function vSong(id) {
 const infoRow = (l, v) => '<div class="info-row"><span class="l">' + esc(l) + '</span><span class="v">' + (v || '—') + '</span></div>';
 
 /* ═══ 13. SETLISTS ═══ */
-function vSetlists() {\n  const list = activeSetlists();\n  let h = '<div class="scope-switch"><button type="button" data-act="setlist-scope" data-v="group" class="' + (ui.setlistScope === 'group' ? 'on' : '') + '">Сет-листы группы <span>' + state.setlists.length + '</span></button><button type="button" data-act="setlist-scope" data-v="personal" class="' + (ui.setlistScope === 'personal' ? 'on' : '') + '">Мои шаблоны <span>' + state.personalSetlists.length + '</span></button></div>';\n  if (!list.length) return h + '<div class="card">' + stateHTML('empty', ui.setlistScope === 'personal' ? 'Личных шаблонов пока нет' : 'Сет-листов пока нет',
+function vSetlists() {
+  const list = activeSetlists();
+  let h = '<div class="scope-switch"><button type="button" data-act="setlist-scope" data-v="group" class="' + (ui.setlistScope === 'group' ? 'on' : '') + '">Сет-листы группы <span>' + state.setlists.length + '</span></button><button type="button" data-act="setlist-scope" data-v="personal" class="' + (ui.setlistScope === 'personal' ? 'on' : '') + '">Мои шаблоны <span>' + state.personalSetlists.length + '</span></button></div>';
+  if (!list.length) return h + '<div class="card">' + stateHTML('empty', ui.setlistScope === 'personal' ? 'Личных шаблонов пока нет' : 'Сет-листов пока нет',
     'Сет-лист — программа выступления: песни в нужном порядке, тональности, переходы и заметки для музыкантов.',
-    '<button class="btn btn-primary" type="button" data-act="new-setlist">' + ic('plus', 17) + (ui.setlistScope === 'personal' ? 'Создать шаблон' : 'Создать первый сет-лист') + '</button>') + '</div>';\n  h += '<div class="grid g2">';\n  list.slice().sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).forEach(function (sl, i) {
+    '<button class="btn btn-primary" type="button" data-act="new-setlist">' + ic('plus', 17) + (ui.setlistScope === 'personal' ? 'Создать шаблон' : 'Создать первый сет-лист') + '</button>') + '</div>';
+  h += '<div class="grid g2">';
+  list.slice().sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).forEach(function (sl, i) {
     const ev = sl.eventId ? evById(sl.eventId) : null, n = (sl.items || []).length;
     h += '<article class="song-card rise" style="animation-delay:' + Math.min(i * 30, 200) + 'ms" data-act="open-setlist" data-id="' + sl.id + '" role="link" tabindex="0" aria-label="Открыть сет-лист ' + esc(sl.name) + '">' +
       '<div class="song-top"><div class="key-badge" aria-hidden="true">' + n + '</div>' +
@@ -1160,7 +1185,8 @@ function vSetlists() {\n  const list = activeSetlists();\n  let h = '<div class=
       '<div class="song-meta">' + (ev ? '<span class="badge b-info">' + ic('calendar', 11) + esc(pdate(ev.date)) + ' · ' + esc(ev.title) + '</span>' : '<span class="badge b-muted">Не привязан к событию</span>') + '</div>' +
       '<div class="song-acts">' +
       '<button class="btn btn-secondary btn-sm" type="button" data-act="print-setlist" data-id="' + sl.id + '" aria-label="Печать сет-листа">' + ic('print', 15) + '</button>' +
-      (ui.setlistScope === 'group' ? '<button class="btn btn-secondary btn-sm" type="button" data-act="sl-save-template" data-id="' + sl.id + '" aria-label="Сохранить личный шаблон">' + ic('inbox', 15) + '</button>' : '<button class="btn btn-secondary btn-sm" type="button" data-act="sl-import-group" data-id="' + sl.id + '" aria-label="Импортировать в группу">' + ic('copy', 15) + '</button>') +\n      '<button class="btn btn-secondary btn-sm" type="button" data-act="dup-setlist" data-id="' + sl.id + '" aria-label="Создать копию">' + ic('copy', 15) + '</button>' +
+      (ui.setlistScope === 'group' ? '<button class="btn btn-secondary btn-sm" type="button" data-act="sl-save-template" data-id="' + sl.id + '" aria-label="Сохранить личный шаблон">' + ic('inbox', 15) + '</button>' : '<button class="btn btn-secondary btn-sm" type="button" data-act="sl-import-group" data-id="' + sl.id + '" aria-label="Импортировать в группу">' + ic('copy', 15) + '</button>') +
+      '<button class="btn btn-secondary btn-sm" type="button" data-act="dup-setlist" data-id="' + sl.id + '" aria-label="Создать копию">' + ic('copy', 15) + '</button>' +
       '<button class="btn btn-danger btn-sm" type="button" data-act="sl-del" data-id="' + sl.id + '" aria-label="Удалить сет-лист">' + ic('trash', 15) + '</button>' +
       '<button class="btn btn-primary btn-sm" type="button" data-act="scene-setlist" data-id="' + sl.id + '">' + ic('monitor', 15) + 'Сцена</button></div></article>';
   });
@@ -1212,7 +1238,8 @@ function vSetlist(id) {
     '<input id="libQ" type="search" placeholder="Поиск песни…" value="' + esc(ui.libQuery) + '" style="border:none;background:none;outline:none;font-size:13.5px;flex:1;min-width:0;box-shadow:none"></div>' +
     '<div class="lib-list" id="libList">';
   const q = ui.libQuery.toLowerCase().trim();
-  const libSource = isPersonalSetlist(sl.id) ? state.personalSongs : state.songs;\n  const lib = libSource.filter(s => !q || ((s.title || '') + ' ' + (s.artist || '')).toLowerCase().indexOf(q) >= 0).sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+  const libSource = isPersonalSetlist(sl.id) ? state.personalSongs : state.songs;
+  const lib = libSource.filter(s => !q || ((s.title || '') + ' ' + (s.artist || '')).toLowerCase().indexOf(q) >= 0).sort((a, b) => a.title.localeCompare(b.title, 'ru'));
   if (!lib.length) h += stateHTML('search', 'Песня не найдена', 'Измените запрос или добавьте песню в репертуар.', '<button class="btn btn-secondary btn-sm" type="button" data-act="new-song">Добавить песню</button>');
   lib.forEach(function (s) {
     h += '<div class="lib-item" draggable="true" data-lib="' + s.id + '"><span class="lk">' + esc(s.key || '—') + '</span>' +
@@ -1510,7 +1537,8 @@ function memberModal(id) {
 }
 function addToSetlistModal(songId) {
   const s = songById(songId);
-  const targetSetlists = activeSetlists();\n  if (!targetSetlists.length) { confirmBox('Сет-листов пока нет', 'Чтобы добавить песню в программу, сначала создайте сет-лист. Создать сейчас?', () => setlistModal(null), 'Создать сет-лист'); return; }
+  const targetSetlists = activeSetlists();
+  if (!targetSetlists.length) { confirmBox('Сет-листов пока нет', 'Чтобы добавить песню в программу, сначала создайте сет-лист. Создать сейчас?', () => setlistModal(null), 'Создать сет-лист'); return; }
   openModal({
     title: 'Добавить в сет-лист', sub: s ? s.title : '', guard: false,
     body: '<div style="display:flex;flex-direction:column;gap:6px">' + targetSetlists.map(sl => {
@@ -1965,12 +1993,19 @@ document.addEventListener('click', function (e) {
     case 'ev-repeat': stop(); ui.evRepeat = !ui.evRepeat; render(); if ($('#modalOverlay').classList.contains('on')) { const b = $('#modalOverlay [data-act="ev-repeat"]'); if (b) { b.classList.toggle('on', ui.evRepeat); b.setAttribute('aria-pressed', ui.evRepeat); } const c = $('#evFilterDone'); if (c) c.textContent = 'Показать ' + filteredUpcoming().length; } break;
     case 'ev-clear': stop(); ui.evQuery = ''; render(); break;
     case 'ev-reset': stop(); ui.evTypes = []; ui.evMine = false; ui.evRepeat = false; ui.evQuery = ''; render(); if ($('#modalOverlay').classList.contains('on')) { const c = $('#evFilterDone'); if (c) c.textContent = 'Показать ' + filteredUpcoming().length; } break;
-    case 'song-scope': { stop(); ui.songScope = el.getAttribute('data-v'); ui.songQuery = ''; ui.songKey = ''; ui.songTag = ''; ui.songFav = false; render(); break; }\n    case 'song-copy-personal': { stop(); copySongToPersonal(id); break; }\n    case 'song-copy-group': { stop(); copySongToGroup(id); break; }\n    case 'setlist-scope': { stop(); ui.setlistScope = el.getAttribute('data-v'); render(); break; }\n    case 'sl-save-template': { stop(); saveSetlistAsTemplate(id); break; }\n    case 'sl-import-group': { stop(); importTemplateToGroup(id); break; }\n    case 'new-song': stop(); songModal(null); break;
+    case 'song-scope': { stop(); ui.songScope = el.getAttribute('data-v'); ui.songQuery = ''; ui.songKey = ''; ui.songTag = ''; ui.songFav = false; render(); break; }
+    case 'song-copy-personal': { stop(); copySongToPersonal(id); break; }
+    case 'song-copy-group': { stop(); copySongToGroup(id); break; }
+    case 'setlist-scope': { stop(); ui.setlistScope = el.getAttribute('data-v'); render(); break; }
+    case 'sl-save-template': { stop(); saveSetlistAsTemplate(id); break; }
+    case 'sl-import-group': { stop(); importTemplateToGroup(id); break; }
+    case 'new-song': stop(); songModal(null); break;
     case 'edit-song': stop(); songModal(id); break;
     case 'song-save': {
       stop(); btnLoading(el);
       const data = readSongForm(id); if (!data) break;
-      const targetSongs = id ? songCollectionFor(id) : activeSongs();\n      if (id) { const i = targetSongs.findIndex(x => x.id === id); if (i >= 0) targetSongs[i] = data; } else targetSongs.push(data);
+      const targetSongs = id ? songCollectionFor(id) : activeSongs();
+      if (id) { const i = targetSongs.findIndex(x => x.id === id); if (i >= 0) targetSongs[i] = data; } else targetSongs.push(data);
       modalDirty = false; hardClose(modalRoot); save(); go(id ? '#/song/' + id : '#/songs'); render();
       toast(id ? 'Изменения песни сохранены' : 'Песня добавлена в репертуар', 'ok');
       break;
@@ -1979,7 +2014,9 @@ document.addEventListener('click', function (e) {
       stop();
       const s = songById(id); if (!s) break;
       confirmBox('Удалить песню?', '«' + s.title + '» будет удалена из репертуара и из всех сет-листов, где она используется.', function () {
-        const personal = state.personalSongs.some(x => x.id === id);\n        if (personal) { state.personalSongs = state.personalSongs.filter(x => x.id !== id); state.personalSetlists.forEach(sl => { sl.items = (sl.items || []).filter(it => it.songId !== id); }); }\n        else { state.songs = state.songs.filter(x => x.id !== id); state.setlists.forEach(sl => { sl.items = (sl.items || []).filter(it => it.songId !== id); }); }
+        const personal = state.personalSongs.some(x => x.id === id);
+        if (personal) { state.personalSongs = state.personalSongs.filter(x => x.id !== id); state.personalSetlists.forEach(sl => { sl.items = (sl.items || []).filter(it => it.songId !== id); }); }
+        else { state.songs = state.songs.filter(x => x.id !== id); state.setlists.forEach(sl => { sl.items = (sl.items || []).filter(it => it.songId !== id); }); }
         save(); go('#/songs'); render(); toast('Песня удалена', 'ok');
       }, 'Удалить песню', true);
       break;
@@ -2040,7 +2077,11 @@ document.addEventListener('click', function (e) {
     case 'sl-save': {
       stop(); btnLoading(el);
       const name = fv('f_slname'); if (!name) { fieldError('f_slname', 'Введите название сет-листа'); break; }
-      let sl = id ? slById(id) : null;\n      const targetSetlists = id ? setlistCollectionFor(id) : activeSetlists();\n      const picks = $('.f_slsong:checked', modalRoot).map(c => c.value);\n      if (sl) { sl.name = name; sl.note = fv('f_slnote'); }\n      else { sl = { id: uid(ui.setlistScope === 'personal' ? 'pt' : 'sl'), name: name, note: fv('f_slnote'), eventId: '', items: picks.map(sid => ({ id: uid('i'), songId: sid, shift: 0, note: '' })) }; targetSetlists.push(sl); }
+      let sl = id ? slById(id) : null;
+      const targetSetlists = id ? setlistCollectionFor(id) : activeSetlists();
+      const picks = $('.f_slsong:checked', modalRoot).map(c => c.value);
+      if (sl) { sl.name = name; sl.note = fv('f_slnote'); }
+      else { sl = { id: uid(ui.setlistScope === 'personal' ? 'pt' : 'sl'), name: name, note: fv('f_slnote'), eventId: '', items: picks.map(sid => ({ id: uid('i'), songId: sid, shift: 0, note: '' })) }; targetSetlists.push(sl); }
       sl.updatedAt = new Date().toISOString();
       modalDirty = false; hardClose(modalRoot); save(); go('#/setlist/' + sl.id); render();
       toast(id ? 'Сет-лист обновлён' : 'Сет-лист создан', 'ok');
@@ -2050,7 +2091,10 @@ document.addEventListener('click', function (e) {
       stop();
       const sl = slById(id); if (!sl) break;
       confirmBox('Удалить сет-лист?', '«' + sl.name + '» будет удалён. Песни в репертуаре останутся, привязанное событие — без программы.', function () {
-        const targetSetlists = setlistCollectionFor(id);\n        const personal = targetSetlists === state.personalSetlists;\n        if (personal) state.personalSetlists = targetSetlists.filter(x => x.id !== id);\n        else { state.setlists = targetSetlists.filter(x => x.id !== id); state.events.forEach(ev => { if (ev.setlistId === id) ev.setlistId = ''; }); }
+        const targetSetlists = setlistCollectionFor(id);
+        const personal = targetSetlists === state.personalSetlists;
+        if (personal) state.personalSetlists = targetSetlists.filter(x => x.id !== id);
+        else { state.setlists = targetSetlists.filter(x => x.id !== id); state.events.forEach(ev => { if (ev.setlistId === id) ev.setlistId = ''; }); }
         save(); go('#/setlists'); render(); toast('Сет-лист удалён', 'ok');
       }, 'Удалить сет-лист', true);
       break;
