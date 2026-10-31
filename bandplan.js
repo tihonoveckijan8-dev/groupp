@@ -2487,7 +2487,21 @@ async function init() {
   const had = load();
   if (window.BandPlanCloud) {
     try { const ready = await cloudStart(); if (!ready) return; }
-    catch (e) { const gate = $('#authGate'); if (gate) gate.hidden = false; toast('Не удалось подключиться к аккаунту: ' + (e.message || 'ошибка сети'), 'err', 7000); return; }
+    catch (e) {
+      const gate = $('#authGate');
+      if (had) {
+        // WHY: a previously authenticated device can keep using its local cache during a temporary outage.
+        load(); cloudUser = null; cloudGroups = []; cloudActiveGroupId = null; cloudUserState = {};
+        if (gate) gate.hidden = true;
+        document.body.classList.remove('auth-required');
+        toast('Нет связи с сервером. Открыта локальная копия; для синхронизации подключитесь к сети и обновите приложение.', 'warn', 9000);
+        window.addEventListener('online', () => location.reload(), { once: true });
+      } else {
+        if (gate) gate.hidden = false;
+        toast('Не удалось подключиться к аккаунту: ' + (e.message || 'ошибка сети'), 'err', 7000);
+        return;
+      }
+    }
   }
   applyTheme(); applyAccentVars();
   ui.calView = state.settings.calView || 'month';
