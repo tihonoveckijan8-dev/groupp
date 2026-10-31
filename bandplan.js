@@ -225,7 +225,7 @@ function cloudSnapshot() {
   };
 }
 function cloudScheduleSave() {
-  if (cloudHydrating || !cloudUser || !cloudActiveGroupId || !window.BandPlanCloud) return;
+  if (cloudHydrating || !cloudUser || !window.BandPlanCloud) return;
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(() => cloudPersistNow().catch(e => toast('Не удалось синхронизировать: ' + (e.message || 'ошибка сети'), 'err', 5000)), 700);
 }
@@ -269,7 +269,7 @@ async function cloudLoadGroup(groupId) {
     const localSettings = cloudUserState.settings || state.settings;
     const personalProfile = cloudUserState.profile || {};
     state.songs = Array.isArray(group.songs) ? group.songs : [];
-    state.events = Array.isArray(group.events) ? group.events : [];
+    state.events = Array.isArray(group.events) ? group.events.map(event => Object.assign({}, event, { myStatus: event.participation && event.participation[cloudUser.id] || event.myStatus || '' })) : [];
     state.setlists = Array.isArray(group.setlists) ? group.setlists : [];
     state.members = Array.isArray(group.members) ? group.members : [];
     state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : [];
@@ -1493,7 +1493,7 @@ function readSongForm(id) {
   if (bpm !== null && (isNaN(bpm) || bpm < 20 || bpm > 400)) { fieldError('f_sbpm', 'Темп должен быть в диапазоне 20–400 BPM'); return null; }
   const old = id ? songById(id) : null;
   return {
-    id: id || uid('s'), title: title, artist: fv('f_sartist'), key: $('#f_skey', w).value,
+    id: id || uid('s'), title: title, artist: fv('f_sartist'), key: $('#f_skey', w).value,\n    groupSourceId: old && old.groupSourceId, personalSourceId: old && old.personalSourceId,
     bpm: bpm, duration: durParse(fv('f_sdur')),
     tags: fv('f_stags').split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 8),
     lyrics: $('#f_slyr', w).value, fav: old ? !!old.fav : false, addedAt: old ? old.addedAt : today(),
