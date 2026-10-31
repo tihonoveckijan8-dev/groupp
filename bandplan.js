@@ -373,7 +373,7 @@ function openWorkspaceModal() {
     sub: cloudUser ? cloudUser.email : '',
     size: 'lg',
     body: '<section class="workspace-list">' + list + '</section>' +
-      '<div class="workspace-create"><h4>Создать группу</h4><div class="field"><label class="field-label" for="groupNewName">Название группы</label><input class="input" id="groupNewName" maxlength="50" value="' + esc(state.profile.bandName || '') + '" placeholder="Название музыкальной группы"></div>' +
+      '<div class="workspace-create"><h4>Создать группу</h4><div class="field"><label class="field-label" for="groupNewName">Название группы</label><input class="input" id="groupNewName" maxlength="50" value="' + esc(cloudActiveGroupId ? '' : (state.profile.bandName || '')) + '" placeholder="Название музыкальной группы"></div>' +
       '<button class="btn btn-primary btn-block" type="button" data-act="group-create">Создать рабочую группу</button></div>' +
       '<div class="workspace-join"><h4>Вступить по коду</h4><div class="field"><label class="field-label" for="groupJoinCode">Код приглашения</label><input class="input" id="groupJoinCode" maxlength="16" autocapitalize="characters" placeholder="Например, A1B2C3D4"></div>' +
       '<button class="btn btn-secondary btn-block" type="button" data-act="group-join">Вступить в группу</button></div>' +
