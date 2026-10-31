@@ -71,9 +71,17 @@
     };
   }
 
-  async function persistGroup(groupId, appState, previous) {
+  async function persistGroup(groupId, appState, previous, userId) {
+    const events = (appState.events || []).map(event => {
+      const copy = Object.assign({}, event);
+      const participation = Object.assign({}, copy.participation || {});
+      if (userId) participation[userId] = copy.myStatus || '';
+      delete copy.myStatus;
+      copy.participation = participation;
+      return copy;
+    });
     const snapshot = {
-      songs: appState.songs || [], events: appState.events || [],
+      songs: appState.songs || [], events,
       setlists: appState.setlists || [], members: appState.members || []
     };
     const before = previous || { songs: [], events: [], setlists: [] };
@@ -107,11 +115,15 @@
   }
 
   async function createGroup(name, displayName, roles) {
-    const { data, error } = await sb.rpc('bandplan_create_group_and_invite', {
-      p_name: name, p_display_name: displayName || '', p_roles: roles || [], p_group_id: null
+    // WHY: create_group_and_invite may reuse an existing membership; create_group
+    // always creates a distinct workspace, including when the account already has groups.
+    const { data, error } = await sb.rpc('bandplan_create_group', {
+      p_name: name, p_display_name: displayName || '', p_roles: roles || []
     });
     if (error) throw error;
-    return Array.isArray(data) ? data[0] : data;
+    const created = Array.isArray(data) ? data[0] : data;
+    if (!created || !created.group_id) return created;
+    return { group_id: created.group_id, group_name: name, invite_code: created.invite_code };
   }
   async function joinGroup(code, displayName, roles) {
     const { data, error } = await sb.rpc('bandplan_join_group', {
