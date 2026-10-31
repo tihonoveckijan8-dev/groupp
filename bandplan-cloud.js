@@ -33,8 +33,8 @@
   const setMode = (mode) => {
     authMode = mode;
     const title = $('#authTitle'), submit = $('#authSubmit'), toggle = $('#authToggle'), hint = $('#authHint');
-    if (title) title.textContent = mode === 'signup' ? 'Создать аккаунт' : 'С возвращением';
-    if (submit) submit.textContent = mode === 'signup' ? 'Зарегистрироваться' : 'Войти';
+    if (title) title.textContent = mode === 'signup' ? 'Создать аккаунт' : (mode === 'reset' ? 'Новый пароль' : 'С возвращением');
+    if (submit) submit.textContent = mode === 'signup' ? 'Зарегистрироваться' : (mode === 'reset' ? 'Сохранить пароль' : 'Войти');
     if (toggle) toggle.textContent = mode === 'signup' ? 'У меня уже есть аккаунт' : 'Создать аккаунт';
     if (hint) hint.textContent = mode === 'signup' ? 'После регистрации подтвердите адрес электронной почты.' : (mode === 'reset' ? 'Укажите новый пароль для своего аккаунта.' : 'Войдите, чтобы открыть свои группы и данные BandPlan.');
     if (toggle) toggle.hidden = mode === 'reset';
