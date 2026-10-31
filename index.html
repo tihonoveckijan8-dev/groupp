@@ -24,15 +24,32 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-700-normal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/cyrillic-400-normal.css">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="application-name" content="BandPlan">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BandPlan">
 <meta name="format-detection" content="telephone=no">
 <link rel="stylesheet" href="bandplan.css">
 </head>
-<body data-route="calendar">\n\n<div class="auth-gate" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-hidden="false">\n  <form class="auth-card" id="authForm">\n    <div class="brand-mark auth-mark" aria-hidden="true">BP</div>\n    <p class="cap">Music Group OS</p>\n    <h1 id="authTitle">С возвращением</h1>\n    <p class="auth-hint" id="authHint">Войдите, чтобы открыть свои группы и данные BandPlan.</p>\n    <label class="field-label" for="authEmail">Электронная почта</label>\n    <input class="input" id="authEmail" type="email" autocomplete="email" required placeholder="name@example.com">\n    <label class="field-label" for="authPassword">Пароль</label>\n    <input class="input" id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Не менее 8 символов">\n    <p class="auth-message" id="authMessage" role="status" hidden></p>\n    <button class="btn btn-primary btn-block" id="authSubmit" type="submit">Войти</button>\n    <button class="auth-link" id="authToggle" type="button">Создать аккаунт</button>\n    <button class="auth-link muted" id="authReset" type="button">Забыли пароль?</button>\n  </form>\n</div>
+<body data-route="calendar">
+
+<div class="auth-gate" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-hidden="false">
+  <form class="auth-card" id="authForm">
+    <div class="brand-mark auth-mark" aria-hidden="true">BP</div>
+    <p class="cap">Music Group OS</p>
+    <h1 id="authTitle">С возвращением</h1>
+    <p class="auth-hint" id="authHint">Войдите, чтобы открыть свои группы и данные BandPlan.</p>
+    <label class="field-label" for="authEmail">Электронная почта</label>
+    <input class="input" id="authEmail" type="email" autocomplete="email" required placeholder="name@example.com">
+    <label class="field-label" for="authPassword">Пароль</label>
+    <input class="input" id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Не менее 8 символов">
+    <p class="auth-message" id="authMessage" role="status" hidden></p>
+    <button class="btn btn-primary btn-block" id="authSubmit" type="submit">Войти</button>
+    <button class="auth-link" id="authToggle" type="button">Создать аккаунт</button>
+    <button class="auth-link muted" id="authReset" type="button">Забыли пароль?</button>
+  </form>
+</div>
 
 <a class="skip-link" href="#view">Перейти к содержимому</a>
 
@@ -74,7 +91,8 @@
         </div>
 
         <div class="tb-tools">
-          <button class="group-switch-btn" type="button" data-act="group-menu" id="groupSwitchBtn" aria-label="Переключить рабочую группу">Моя группа</button>\n          <button class="icon-btn" type="button" data-act="theme-toggle" id="tbTheme" aria-label="Переключить тему"></button>
+          <button class="group-switch-btn" type="button" data-act="group-menu" id="groupSwitchBtn" aria-label="Переключить рабочую группу">Моя группа</button>
+          <button class="icon-btn" type="button" data-act="theme-toggle" id="tbTheme" aria-label="Переключить тему"></button>
           <button class="icon-btn" type="button" data-act="nav" data-to="settings" id="tbCust" aria-label="Оформление и настройки"></button>
           <button class="avatar-btn" type="button" id="tbAvatar" data-act="nav" data-to="settings" aria-label="Профиль и состав группы"></button>
         </div>
@@ -120,6 +138,8 @@
 <input type="file" id="fileIn" accept="application/json,.json" hidden>
 <noscript><p class="noscript">Для работы BandPlan необходимо включить JavaScript в настройках браузера.</p></noscript>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="bandplan-cloud.js"></script>\n<script src="bandplan.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="bandplan-cloud.js"></script>
+<script src="bandplan.js"></script>
 </body>
 </html>
