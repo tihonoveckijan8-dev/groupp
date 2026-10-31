@@ -178,7 +178,7 @@ const KEY = 'bandplan.premium.v6';
 function defaults() {
   return {
     profile: { name: '', role: '', bandName: 'Моя группа', bandDesc: '', defaultParticipation: 'yes', roles: [] },
-    members: [], events: [], songs: [], setlists: [],
+    members: [], events: [], songs: [], setlists: [], personalSongs: [], personalSetlists: [],
     settings: {
       theme: 'light', accent: '#2547D0', notation: 'auto', weekStart: 1,
       lyricsSize: 15, sceneSize: 26, sceneSpeed: 60, autoscroll: true, reduced: false, calView: 'month', toastMode: 'off', showChords: true
@@ -203,11 +203,202 @@ function load() {
     state.settings = Object.assign(defaults().settings, d.settings || {});
     if (!state.settings.accent || ['#6c5ce7', '#2f55d4'].indexOf(state.settings.accent.toLowerCase()) >= 0) state.settings.accent = '#2547D0';
     state.members = d.members || []; state.events = d.events || [];
-    state.songs = d.songs || []; state.setlists = d.setlists || [];
+    state.songs = d.songs || []; state.setlists = d.setlists || [];\n    state.personalSongs = d.personalSongs || []; state.personalSetlists = d.personalSetlists || [];
     return true;
   } catch (e) { return false; }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Не удалось сохранить: хранилище браузера недоступно', 'err'); } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Не удалось сохранить: хранилище браузера недоступно', 'err'); } cloudScheduleSave(); }
+
+/* ═══ 5A. CLOUD WORKSPACES ═══ */
+/* WHY: localStorage remains the fast offline cache; the authenticated group workspace
+   is the shared source of truth, while personal collections stay in user_state. */
+let cloudUser = null, cloudGroups = [], cloudActiveGroupId = null, cloudUserState = {};
+let cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
+let cloudUnsubscribe = null, cloudSaveTimer = null, cloudHydrating = false;
+function cloudSnapshot() {
+  return {
+    songs: JSON.parse(JSON.stringify(state.songs || [])),
+    events: JSON.parse(JSON.stringify(state.events || [])),
+    setlists: JSON.parse(JSON.stringify(state.setlists || [])),
+    members: JSON.parse(JSON.stringify(state.members || []))
+  };
+}
+function cloudScheduleSave() {
+  if (cloudHydrating || !cloudUser || !cloudActiveGroupId || !window.BandPlanCloud) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(() => cloudPersistNow().catch(e => toast('Не удалось синхронизировать: ' + (e.message || 'ошибка сети'), 'err', 5000)), 700);
+}
+async function cloudPersistNow() {
+  if (!cloudUser || !cloudActiveGroupId || !window.BandPlanCloud) return;
+  const current = cloudSnapshot();
+  cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot);
+  cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, {
+    activeGroupId: cloudActiveGroupId,
+    profile: {
+      name: state.profile.name || '', role: state.profile.role || '',
+      roles: state.profile.roles || [], defaultParticipation: state.profile.defaultParticipation || 'yes'
+    },
+    settings: state.settings,
+    onboardingDone: !!state.onboardingDone,
+    personalSongs: state.personalSongs || [],
+    personalSetlists: state.personalSetlists || []
+  });
+  return current;
+}
+function cloudUpdateButton() {
+  const b = $('#groupSwitchBtn');
+  if (!b) return;
+  const g = cloudGroups.find(x => x.group_id === cloudActiveGroupId);
+  b.textContent = g ? g.group_name : 'Личное пространство';
+  b.title = g ? 'Рабочая группа: ' + g.group_name : 'Создать группу или вступить по коду';
+}
+async function cloudRefreshGroups() {
+  const { data, error } = await BandPlanCloud.client.rpc('bandplan_get_my_groups');
+  if (error) throw error;
+  cloudGroups = data || [];
+  cloudUpdateButton();
+}
+async function cloudLoadGroup(groupId) {
+  if (!groupId) return;
+  cloudHydrating = true;
+  try {
+    await BandPlanCloud.setActiveGroup(groupId);
+    const remote = await BandPlanCloud.loadGroup(groupId, cloudUser.id);
+    const group = remote.state || {};
+    const localSettings = cloudUserState.settings || state.settings;
+    const personalProfile = cloudUserState.profile || {};
+    state.songs = Array.isArray(group.songs) ? group.songs : [];
+    state.events = Array.isArray(group.events) ? group.events : [];
+    state.setlists = Array.isArray(group.setlists) ? group.setlists : [];
+    state.members = Array.isArray(group.members) ? group.members : [];
+    state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : [];
+    state.personalSetlists = Array.isArray(cloudUserState.personalSetlists) ? cloudUserState.personalSetlists : [];
+    state.profile = Object.assign(defaults().profile, state.profile, personalProfile);
+    state.profile.name = remote.account.display_name || state.profile.name || (cloudUser.email || '').split('@')[0];
+    state.profile.roles = remote.account.roles && remote.account.roles.length ? remote.account.roles : state.profile.roles || [];
+    state.profile.role = state.profile.roles[0] || state.profile.role || '';
+    state.profile.bandName = remote.group.name || 'Моя группа';
+    state.settings = Object.assign(defaults().settings, localSettings, remote.account.personal_settings || {});
+    cloudActiveGroupId = groupId;
+    cloudLastSnapshot = cloudSnapshot();
+    await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: groupId });
+    if (cloudUnsubscribe) cloudUnsubscribe();
+    cloudUnsubscribe = await BandPlanCloud.subscribeGroup(groupId, payload => {
+      if (!payload || !payload.new || !payload.new.state || cloudHydrating) return;
+      const next = payload.new.state;
+      cloudHydrating = true;
+      state.songs = Array.isArray(next.songs) ? next.songs : state.songs;
+      state.events = Array.isArray(next.events) ? next.events : state.events;
+      state.setlists = Array.isArray(next.setlists) ? next.setlists : state.setlists;
+      state.members = Array.isArray(next.members) ? next.members : state.members;
+      cloudLastSnapshot = cloudSnapshot();
+      save();
+      render();
+      cloudHydrating = false;
+    });
+    applyTheme(); applyAccentVars(); save(); cloudUpdateButton();
+  } finally { cloudHydrating = false; }
+}
+async function cloudStart() {
+  const boot = await BandPlanCloud.start();
+  if (!boot.user) return false;
+  cloudUser = boot.user; cloudUserState = boot.userState || {}; cloudGroups = boot.groups || [];
+  state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : state.personalSongs || [];
+  state.personalSetlists = Array.isArray(cloudUserState.personalSetlists) ? cloudUserState.personalSetlists : state.personalSetlists || [];
+  if (cloudGroups.length) {
+    const preferred = cloudUserState.activeGroupId;
+    const active = cloudGroups.find(g => g.group_id === preferred) || cloudGroups[0];
+    if (localStorage.getItem(KEY) && !localStorage.getItem('bandplan.pre-cloud-backup')) {
+      try { localStorage.setItem('bandplan.pre-cloud-backup', localStorage.getItem(KEY)); } catch (e) { }
+    }
+    await cloudLoadGroup(active.group_id);
+  } else {
+    state.profile.name = state.profile.name || (cloudUser.email || '').split('@')[0];
+    cloudUpdateButton();
+  }
+  return true;
+}
+function openWorkspaceModal() {
+  const list = cloudGroups.length ? cloudGroups.map(g =>
+    '<div class="workspace-row"><div class="grow"><b>' + esc(g.group_name) + '</b><span class="t-xs t-muted">' +
+    (g.role === 'owner' ? 'Владелец' : 'Участник') + '</span></div>' +
+    (g.group_id === cloudActiveGroupId ? '<span class="badge b-ok">Открыта</span>' :
+      '<button class="btn btn-secondary btn-sm" type="button" data-act="group-switch" data-id="' + esc(g.group_id) + '">Открыть</button>') + '</div>'
+  ).join('') : stateHTML('empty', 'Пока нет рабочих групп', 'Создайте свою группу или вступите в существующую по коду приглашения.');
+  openModal({
+    title: 'Рабочие пространства',
+    sub: cloudUser ? cloudUser.email : '',
+    size: 'lg',
+    body: '<section class="workspace-list">' + list + '</section>' +
+      '<div class="workspace-create"><h4>Создать группу</h4><div class="field"><label class="field-label" for="groupNewName">Название группы</label><input class="input" id="groupNewName" maxlength="50" value="' + esc(state.profile.bandName || '') + '" placeholder="Название музыкальной группы"></div>' +
+      '<button class="btn btn-primary btn-block" type="button" data-act="group-create">Создать рабочую группу</button></div>' +
+      '<div class="workspace-join"><h4>Вступить по коду</h4><div class="field"><label class="field-label" for="groupJoinCode">Код приглашения</label><input class="input" id="groupJoinCode" maxlength="16" autocapitalize="characters" placeholder="Например, A1B2C3D4"></div>' +
+      '<button class="btn btn-secondary btn-block" type="button" data-act="group-join">Вступить в группу</button></div>' +
+      (cloudActiveGroupId ? '<button class="btn btn-danger btn-block mt" type="button" data-act="group-leave">Покинуть текущую группу</button>' : ''),
+    footer: '<button class="btn btn-secondary" type="button" data-act="modal-close">Закрыть</button>'
+  });
+}
+async function cloudCreateWorkspace() {
+  const name = fv('groupNewName');
+  if (name.length < 3) { fieldError('groupNewName', 'Название должно содержать не менее 3 символов'); return; }
+  await cloudPersistNow().catch(() => {});
+  const local = cloudSnapshot();
+  const created = await BandPlanCloud.createGroup(name, state.profile.name, state.profile.roles || []);
+  if (!created || !created.group_id) throw new Error('Сервер не вернул созданную группу.');
+  cloudActiveGroupId = created.group_id;
+  cloudGroups.push({ group_id: created.group_id, group_name: created.group_name || name, role: 'owner' });
+  state.profile.bandName = created.group_name || name;
+  cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
+  state.songs = local.songs; state.events = local.events; state.setlists = local.setlists; state.members = local.members;
+  await cloudPersistNow();
+  hardClose(modalRoot); render(); toast('Группа создана. Код приглашения: ' + created.invite_code, 'ok', 8000);
+}
+async function cloudJoinWorkspace() {
+  const code = fv('groupJoinCode').toUpperCase().replace(/\s+/g, '');
+  if (!code) { fieldError('groupJoinCode', 'Введите код приглашения'); return; }
+  const joined = await BandPlanCloud.joinGroup(code, state.profile.name, state.profile.roles || []);
+  if (!joined || !joined.group_id) throw new Error('Не удалось определить вступившую группу.');
+  await cloudRefreshGroups();
+  await cloudLoadGroup(joined.group_id);
+  hardClose(modalRoot); render(); toast('Вы вступили в группу «' + (joined.group_name || '') + '»', 'ok');
+}
+async function cloudSwitchWorkspace(groupId) {
+  if (groupId === cloudActiveGroupId) { hardClose(modalRoot); return; }
+  await cloudPersistNow();
+  await cloudLoadGroup(groupId);
+  await cloudRefreshGroups();
+  hardClose(modalRoot); go('#/calendar'); render();
+  toast('Рабочая группа переключена', 'ok');
+}
+async function cloudLeaveWorkspace() {
+  if (!cloudActiveGroupId) return;
+  await cloudPersistNow();
+  await BandPlanCloud.leaveGroup(cloudActiveGroupId);
+  await cloudRefreshGroups();
+  const next = cloudGroups[0];
+  if (next) await cloudLoadGroup(next.group_id);
+  else {
+    cloudActiveGroupId = null;
+    state.songs = []; state.events = []; state.setlists = []; state.members = [];
+    state.profile.bandName = 'Личное пространство';
+    cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
+    await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: null });
+  }
+  hardClose(modalRoot); go('#/calendar'); render();
+  toast('Вы вышли из группы', 'ok');
+}
+async function cloudCopyInvite() {
+  if (!cloudActiveGroupId) { openWorkspaceModal(); return; }
+  const code = await BandPlanCloud.inviteCode();
+  const value = typeof code === 'string' ? code : code && (code.invite_code || code.code);
+  if (!value) throw new Error('Не удалось получить код приглашения.');
+  const text = 'Код приглашения в BandPlan: ' + value;
+  if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+  else window.prompt('Скопируйте код приглашения', value);
+  toast('Код приглашения скопирован: ' + value, 'ok', 6000);
+}
+
+
 function commit() { save(); render(); }
 const songById = id => state.songs.find(s => s.id === id);
 const evById = id => state.events.find(e => e.id === id);
@@ -428,7 +619,7 @@ function buildChrome() {
   $('#brandBand').textContent = p.bandName || 'Моя группа';
   $('#sideProfile').innerHTML = '<div class="av" aria-hidden="true">' + esc(((p.name || 'B').charAt(0)).toUpperCase()) + '</div>' +
     '<div style="min-width:0"><div class="nm">' + esc(p.name || 'Профиль не заполнен') + '</div><div class="rl">' + esc(rolesLabel(myRoles())) + '</div></div>';
-  $('#tbAvatar').textContent = ((p.name || 'B').charAt(0)).toUpperCase();
+  $('#tbAvatar').textContent = ((p.name || 'B').charAt(0)).toUpperCase();\n  cloudUpdateButton();
 
   const th = state.settings.theme;
   const thIco = ic(th === 'light' ? 'moon' : 'sun', 18);
@@ -1053,8 +1244,7 @@ function vSettings() {
       '<button class="icon-btn" type="button" data-act="mem-del" data-id="' + m.id + '" aria-label="Удалить участника">' + ic('trash', 15) + '</button></div>';
   });
   h += '</section>';
-
-  h += '<section class="card rise" style="animation-delay:.07s;grid-column:1/-1"><div class="card-h"><div><h2>' + ic('palette', 18) + ' Оформление интерфейса</h2><div class="sub">Изменения применяются сразу и сохраняются на устройстве</div></div></div>' +
+\n  h += '<section class="card rise workspace-settings"><div class="card-h"><div><h2>Рабочие пространства</h2><div class="sub">Общие песни, события и сет-листы нескольких групп</div></div></div>' +\n    '<p class="t-sm t-muted mb">' + (cloudActiveGroupId ? 'Активная группа: ' + esc(state.profile.bandName) : 'Сейчас открыто личное пространство. Подключите группу, чтобы совместно работать с музыкантами.') + '</p>' +\n    '<button class="btn btn-secondary btn-block" type="button" data-act="group-menu">' + ic('users', 16) + 'Управление группами</button>' +\n    '<button class="btn btn-secondary btn-block mt-s" type="button" data-act="sign-out">' + ic('x', 16) + 'Выйти из аккаунта (' + esc(cloudUser ? cloudUser.email : '') + ')</button></section>';\n\n  h += '<section class="card rise" style="animation-delay:.07s;grid-column:1/-1"><div class="card-h"><div><h2>' + ic('palette', 18) + ' Оформление интерфейса</h2><div class="sub">Изменения применяются сразу и сохраняются на устройстве</div></div></div>' +
     '<div class="split2"><div>' +
     '<div class="field"><span class="field-label">Тема</span><div class="seg">' +
     [['light', 'Светлая', 'sun'], ['dark', 'Тёмная', 'moon'], ['amoled', 'AMOLED', 'bolt']].map(t => '<button type="button" data-act="theme-set" data-v="' + t[0] + '" class="' + (s.theme === t[0] ? 'on' : '') + '" aria-pressed="' + (s.theme === t[0]) + '" data-accent="1">' + ic(t[2], 14) + t[1] + '</button>').join('') + '</div></div>' +
@@ -1623,7 +1813,7 @@ document.addEventListener('click', function (e) {
   const stop = () => { e.preventDefault(); e.stopPropagation(); };
   const btnLoading = b => { if (b) { b.classList.add('loading'); setTimeout(() => b.classList.remove('loading'), 500); } };
   switch (a) {
-    case 'modal-close': stop(); closeModal(); break;
+    case 'modal-close': stop(); closeModal(); break;\n    case 'group-menu': stop(); openWorkspaceModal(); break;\n    case 'group-create': { stop(); btnLoading(el); cloudCreateWorkspace().catch(e => toast('Не удалось создать группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-join': { stop(); btnLoading(el); cloudJoinWorkspace().catch(e => toast('Не удалось вступить: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-switch': { stop(); cloudSwitchWorkspace(id).catch(e => toast('Не удалось переключить группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-leave': { stop(); confirmBox('Покинуть группу?', 'Вы перестанете видеть её репертуар, события и сет-листы. Если вы единственный владелец, сначала передайте владение другому участнику.', () => cloudLeaveWorkspace().catch(e => toast('Не удалось выйти: ' + (e.message || 'ошибка'), 'err', 6000)), 'Покинуть группу', true); break; }\n    case 'sign-out': { stop(); confirmBox('Выйти из аккаунта?', 'Локальная копия останется на этом устройстве. Для повторного доступа потребуется войти снова.', () => BandPlanCloud.signOut().then(() => location.reload()).catch(e => toast(e.message || 'Не удалось выйти', 'err')), 'Выйти', true); break; }
     case 'confirm-yes': { stop(); const cb = confirmCb; hardClose(modalRoot); if (cb) cb(); break; }
     case 'reload-view': stop(); ui.skeleton = true; render(); break;
     case 'nav': stop(); ui.skeleton = true; go('#/' + el.getAttribute('data-to')); break;
@@ -1895,13 +2085,7 @@ document.addEventListener('click', function (e) {
       }, 'Удалить участника', true);
       break;
     }
-    case 'invite': {
-      stop();
-      const txt = 'Присоединяйся к ' + (state.profile.bandName || 'группе') + ' в BandPlan: ' + location.href;
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast('Ссылка-приглашение скопирована', 'ok')).catch(() => toast('Не удалось скопировать: ' + txt, 'warn', 7000));
-      else toast('Ссылка: ' + txt, 'info', 7000);
-      break;
-    }
+    case 'invite': { stop(); cloudCopyInvite().catch(e => toast('Не удалось получить приглашение: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
     case 'export': stop(); exportData(); break;
     case 'import': stop(); $('#fileIn').click(); break;
     case 'demo': {
@@ -2142,9 +2326,7 @@ function wireStickyHeader() {
 }
 
 /* ═══ 26. INIT ═══ */
-function init() {
-  const had = load();
-  applyTheme(); applyAccentVars();
+async function init() {\n  const had = load();\n  if (window.BandPlanCloud) {\n    try { const ready = await cloudStart(); if (!ready) return; }\n    catch (e) { const gate = $('#authGate'); if (gate) gate.hidden = false; toast('Не удалось подключиться к аккаунту: ' + (e.message || 'ошибка сети'), 'err', 7000); return; }\n  }\n  applyTheme(); applyAccentVars();
   ui.calView = state.settings.calView || 'month';
   if (!location.hash) location.hash = '#/calendar';
   window.addEventListener('hashchange', function () { ui.skeleton = true; render(); });
