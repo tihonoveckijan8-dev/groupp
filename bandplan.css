@@ -1419,3 +1419,27 @@ h1,h2,h3,h4,p,.sub,.nm,.rl,.ev-title,.ev-meta,.sd-t,.sd-m,.brand-name,.brand-sub
   .content, #view { padding-block: 12px; }
   .sidebar { padding-block: 12px; }
 }
+
+
+/* ─── AUTH + WORKSPACE ACCESS ────────────────────────────────────────── */
+/* WHY: authentication is a real app entry point; keep the existing app
+   visually intact underneath and never expose private workspace data pre-login. */
+.auth-gate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:24px;
+  background:var(--bg);overflow:auto}
+.auth-gate[hidden]{display:none}
+.auth-card{width:min(100%,430px);display:flex;flex-direction:column;gap:12px;padding:clamp(24px,5vw,40px);
+  border-radius:var(--r-32);background:var(--surf-2);box-shadow:var(--shadow-lg)}
+.auth-mark{width:52px;height:52px;margin-bottom:8px}
+.auth-card h1{font-size:clamp(28px,5vw,36px)}
+.auth-hint{color:var(--muted);font-size:14px;margin-bottom:8px}
+.auth-card .field-label{margin:5px 0 -7px}
+.auth-card .input{width:100%;min-height:48px}
+.auth-message{padding:12px 14px;border-radius:var(--r-14);background:var(--ok-bg);color:var(--ok);font-size:13px}
+.auth-message.is-error{background:var(--danger-bg);color:var(--danger)}
+.auth-link{min-height:38px;color:var(--accent);font-weight:var(--fw-semi);font-size:13px}
+.auth-link.muted{color:var(--muted);font-weight:var(--fw-med)}
+.group-switch-btn{height:40px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:0 13px;border-radius:var(--r-14);background:var(--surf-2);color:var(--text-2);
+  box-shadow:var(--shadow-xs);font-size:12.5px;font-weight:var(--fw-semi)}
+.group-switch-btn:hover{color:var(--accent);background:var(--accent-soft)}
+@media(max-width:600px){.auth-gate{padding:16px}.auth-card{border-radius:24px}.group-switch-btn{max-width:112px;padding:0 9px;font-size:11px}}
