@@ -230,9 +230,9 @@ function cloudScheduleSave() {
   cloudSaveTimer = setTimeout(() => cloudPersistNow().catch(e => toast('Не удалось синхронизировать: ' + (e.message || 'ошибка сети'), 'err', 5000)), 700);
 }
 async function cloudPersistNow() {
-  if (!cloudUser || !cloudActiveGroupId || !window.BandPlanCloud) return;
+  if (!cloudUser || !window.BandPlanCloud) return;
   const current = cloudSnapshot();
-  cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot);
+  if (cloudActiveGroupId) cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot, cloudUser.id);
   cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, {
     activeGroupId: cloudActiveGroupId,
     profile: {
