@@ -2,7 +2,7 @@
  * WHY: never cache authenticated Supabase API responses; cache keys do not safely isolate
  * private account data by Authorization header.
  */
-const V = 'bandplan-v17';
+const V = 'bandplan-v18';;
 const SUPABASE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 const SHELL = [
   './', 'index.html', 'bandplan.css', 'bandplan.js', 'bandplan-cloud.js',
