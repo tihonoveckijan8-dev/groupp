@@ -328,6 +328,7 @@ async function cloudLoadGroup(groupId) {
     });
     applyTheme(); applyAccentVars(); save(); cloudUpdateButton();
   } finally { cloudHydrating = false; }
+  await cloudPersistNow();
 }
 async function cloudStart() {
   const boot = await BandPlanCloud.start();
