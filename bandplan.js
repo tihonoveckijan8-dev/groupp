@@ -361,8 +361,11 @@ async function cloudCreateWorkspace() {
   cloudActiveGroupId = created.group_id;
   cloudGroups.push({ group_id: created.group_id, group_name: created.group_name || name, role: 'owner' });
   state.profile.bandName = created.group_name || name;
-  cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
   state.songs = local.songs; state.events = local.events; state.setlists = local.setlists; state.members = local.members;
+  const ownMember = state.members.find(m => m.name && m.name === state.profile.name);
+  if (ownMember) ownMember.accountId = cloudUser.id;
+  else state.members.unshift({ id: cloudUser.id, accountId: cloudUser.id, name: state.profile.name || 'Участник', roles: state.profile.roles || [], role: state.profile.role || 'other', color: PALETTE[0], note: 'это вы' });
+  cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
   await cloudPersistNow();
   hardClose(modalRoot); render(); toast('Группа создана. Код приглашения: ' + created.invite_code, 'ok', 8000);
 }
