@@ -1413,7 +1413,7 @@ function bindSettings() {
     const name = (e.target.value || '').trim();
     if (name.length < 3) { toast('Название группы должно содержать не менее 3 символов', 'warn'); return; }
     const { error } = await BandPlanCloud.client.rpc('bandplan_rename_group', { p_name: name, p_group_id: cloudActiveGroupId });
-    if (error) toast('Не удалось переименовать группу: ' + error.message, 'err', 5000);
+    if (error) { state.profile.bandName = group.group_name; e.target.value = group.group_name; save(); toast('Не удалось переименовать группу: ' + error.message, 'err', 5000); }
     else { group.group_name = name; state.profile.bandName = name; cloudUpdateButton(); save(); toast('Название группы обновлено', 'ok'); }
   });
   on('setBandDesc', 'input', debounce(e => { state.profile.bandDesc = e.target.value; save(); }));
