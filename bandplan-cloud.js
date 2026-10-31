@@ -69,10 +69,16 @@
     if (stateRes.error) throw stateRes.error;
     if (groupRes.error) throw groupRes.error;
     if (accountRes.error) throw accountRes.error;
+    const participationRes = await sb.from('bandplan_event_participation')
+      .select('event_id,status').eq('group_id', groupId).eq('user_id', userId);
+    if (participationRes.error) throw participationRes.error;
+    const participation = {};
+    (participationRes.data || []).forEach(row => { participation[row.event_id] = row.status; });
     return {
       group: groupRes.data,
       state: stateRes.data && stateRes.data.state || {},
-      account: accountRes.data || {}
+      account: accountRes.data || {},
+      participation
     };
   }
 
