@@ -269,7 +269,9 @@ async function cloudLoadGroup(groupId) {
     const localSettings = cloudUserState.settings || state.settings;
     const personalProfile = cloudUserState.profile || {};
     state.songs = Array.isArray(group.songs) ? group.songs : [];
-    state.events = Array.isArray(group.events) ? group.events.map(event => Object.assign({}, event, { myStatus: event.participation && event.participation[cloudUser.id] || event.myStatus || '' })) : [];
+    state.events = Array.isArray(group.events) ? group.events.map(event => Object.assign({}, event, {
+      myStatus: event.participation && event.participation[cloudUser.id] || event.myStatus || ''
+    })) : [];
     state.setlists = Array.isArray(group.setlists) ? group.setlists : [];
     state.members = Array.isArray(group.members) ? group.members : [];
     state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : [];
@@ -279,22 +281,30 @@ async function cloudLoadGroup(groupId) {
     state.profile.roles = remote.account.roles && remote.account.roles.length ? remote.account.roles : state.profile.roles || [];
     state.profile.role = state.profile.roles[0] || state.profile.role || '';
     state.profile.bandName = remote.group.name || 'Моя группа';
+    const ownMember = state.members.find(m => m.accountId === cloudUser.id || m.id === cloudUser.id ||
+      (m.name && m.name === state.profile.name));
+    if (ownMember) ownMember.accountId = cloudUser.id;
+    else state.members.unshift({
+      id: cloudUser.id, accountId: cloudUser.id, name: state.profile.name || 'Участник',
+      roles: state.profile.roles || [], role: state.profile.role || 'other', color: PALETTE[0], note: 'это вы'
+    });
     state.settings = Object.assign(defaults().settings, localSettings, remote.account.personal_settings || {});
     cloudActiveGroupId = groupId;
     cloudLastSnapshot = cloudSnapshot();
-    await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: groupId });
+    cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: groupId });
     if (cloudUnsubscribe) cloudUnsubscribe();
     cloudUnsubscribe = await BandPlanCloud.subscribeGroup(groupId, payload => {
       if (!payload || !payload.new || !payload.new.state || cloudHydrating) return;
       const next = payload.new.state;
       cloudHydrating = true;
       state.songs = Array.isArray(next.songs) ? next.songs : state.songs;
-      state.events = Array.isArray(next.events) ? next.events : state.events;
+      state.events = Array.isArray(next.events) ? next.events.map(event => Object.assign({}, event, {
+        myStatus: event.participation && event.participation[cloudUser.id] || ''
+      })) : state.events;
       state.setlists = Array.isArray(next.setlists) ? next.setlists : state.setlists;
       state.members = Array.isArray(next.members) ? next.members : state.members;
       cloudLastSnapshot = cloudSnapshot();
-      save();
-      render();
+      save(); render();
       cloudHydrating = false;
     });
     applyTheme(); applyAccentVars(); save(); cloudUpdateButton();
