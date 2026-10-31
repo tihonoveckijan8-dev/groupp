@@ -289,7 +289,7 @@ async function cloudLoadGroup(groupId) {
     const personalProfile = cloudUserState.profile || {};
     state.songs = Array.isArray(group.songs) ? group.songs : [];
     state.events = Array.isArray(group.events) ? group.events.map(event => Object.assign({}, event, {
-      myStatus: event.participation && event.participation[cloudUser.id] || event.myStatus || ''
+      myStatus: remote.participation && remote.participation[event.id] || event.participation && event.participation[cloudUser.id] || event.myStatus || ''
     })) : [];
     state.setlists = Array.isArray(group.setlists) ? group.setlists : [];
     state.members = Array.isArray(group.members) ? group.members : [];
