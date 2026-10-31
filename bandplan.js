@@ -100,18 +100,15 @@ function isChordLine(l) {
 }
 function transposeLyrics(text, n) {
   if (!n) return text || '';
-  return String(text || '').split('
-').map(function (l) {
+  return String(text || '').split('\n').map(function (l) {
     if (isSection(l)) return l;
     if (isChordLine(l)) return l.replace(/[^\s]+/g, t => isChord(t) ? transposeChord(t, n) : t);
     return l.replace(/\[([A-G][^\]\s]*)\]/g, (m, c) => isChord(c) ? '[' + transposeChord(c, n) + ']' : m);
-  }).join('
-');
+  }).join('\n');
 }
 function renderLyrics(text, n) {
   const out = [];
-  String(text || '').split('
-').forEach(function (line) {
+  String(text || '').split('\n').forEach(function (line) {
     if (state.settings.showChords === false) line = line.replace(/\[([A-G][^\]\s]*)\]/g, (m, c) => isChord(c) ? '' : m);
     if (!line.trim()) { out.push('<span class="ln"> </span>'); return; }
     if (isSection(line)) { out.push('<span class="ln sec">' + esc(line.trim().slice(1, -1)) + '</span>'); return; }
@@ -128,8 +125,7 @@ function renderLyrics(text, n) {
 }
 function extractChords(text) {
   const out = [], seen = {};
-  String(text || '').split('
-').forEach(function (l) {
+  String(text || '').split('\n').forEach(function (l) {
     if (isSection(l)) return;
     if (isChordLine(l)) { l.trim().split(/\s+/).forEach(t => { if (isChord(t) && !seen[t]) { seen[t] = 1; out.push(t); } }); return; }
     const re = /\[([A-G][^\]\s]*)\]/g; let m;
@@ -139,8 +135,7 @@ function extractChords(text) {
 }
 function extractSections(text) {
   const out = [];
-  String(text || '').split('
-').forEach(function (l) {
+  String(text || '').split('\n').forEach(function (l) {
     const m = /^\s*\[([^\]]+)\]\s*$/.exec(l);
     if (m && !isChord(m[1].trim()) && out.indexOf(m[1].trim()) < 0) out.push(m[1].trim());
   });
