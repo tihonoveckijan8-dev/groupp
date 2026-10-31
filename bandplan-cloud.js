@@ -147,6 +147,18 @@
     snapshot.events = mergeCollection('events');
     snapshot.setlists = mergeCollection('setlists');
     snapshot.members = mergeCollection('members');
+    const finalRemoved = (key) => (before[key] || []).map(x => x.id).filter(id => !(snapshot[key] || []).some(x => x.id === id));
+    // WHY: the merge may discover that another member deleted a record after this device loaded it.
+    // Reconcile normalized tables with the merged snapshot so stale local copies cannot resurrect it.
+    const { error: reconcileError } = await sb.rpc('bandplan_sync_group', {
+      p_songs: snapshot.songs, p_events: snapshot.events, p_setlists: snapshot.setlists,
+      p_roster: snapshot.members, p_display_name: appState.profile && appState.profile.name || '',
+      p_roles: appState.profile && appState.profile.roles || [],
+      p_personal_settings: appState.settings || {},
+      p_delete_songs: finalRemoved('songs'), p_delete_events: finalRemoved('events'),
+      p_delete_setlists: finalRemoved('setlists'), p_group_id: groupId
+    });
+    if (reconcileError) throw reconcileError;
 
     const { error } = await sb.from('bandplan_group_state').upsert({
       group_id: groupId, state: snapshot, updated_at: new Date().toISOString()
