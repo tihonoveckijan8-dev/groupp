@@ -1390,7 +1390,16 @@ function kb() { try { return (new Blob([JSON.stringify(state)]).size / 1024).toF
 function bindSettings() {
   const on = (id, ev, fn) => { const e = $('#' + id); if (e) e.addEventListener(ev, fn); };
   on('setName', 'input', debounce(e => { state.profile.name = e.target.value; save(); buildChrome(); }));
-  on('setBand', 'input', debounce(e => { state.profile.bandName = e.target.value || 'Моя группа'; save(); buildChrome(); }));\n  on('setBand', 'change', async e => {\n    const group = cloudGroups.find(g => g.group_id === cloudActiveGroupId);\n    if (!group || group.role !== 'owner' || !cloudActiveGroupId) return;\n    const name = (e.target.value || '').trim();\n    if (name.length < 3) { toast('Название группы должно содержать не менее 3 символов', 'warn'); return; }\n    const { error } = await BandPlanCloud.client.rpc('bandplan_rename_group', { p_name: name, p_group_id: cloudActiveGroupId });\n    if (error) toast('Не удалось переименовать группу: ' + error.message, 'err', 5000);\n    else { group.group_name = name; state.profile.bandName = name; cloudUpdateButton(); save(); toast('Название группы обновлено', 'ok'); }\n  });
+  on('setBand', 'input', debounce(e => { state.profile.bandName = e.target.value || 'Моя группа'; save(); buildChrome(); }));
+  on('setBand', 'change', async e => {
+    const group = cloudGroups.find(g => g.group_id === cloudActiveGroupId);
+    if (!group || group.role !== 'owner' || !cloudActiveGroupId) return;
+    const name = (e.target.value || '').trim();
+    if (name.length < 3) { toast('Название группы должно содержать не менее 3 символов', 'warn'); return; }
+    const { error } = await BandPlanCloud.client.rpc('bandplan_rename_group', { p_name: name, p_group_id: cloudActiveGroupId });
+    if (error) toast('Не удалось переименовать группу: ' + error.message, 'err', 5000);
+    else { group.group_name = name; state.profile.bandName = name; cloudUpdateButton(); save(); toast('Название группы обновлено', 'ok'); }
+  });
   on('setBandDesc', 'input', debounce(e => { state.profile.bandDesc = e.target.value; save(); }));
   on('lsRange', 'input', e => { state.settings.lyricsSize = +e.target.value; $('#lsVal').textContent = e.target.value + 'px'; document.documentElement.style.setProperty('--lsize', e.target.value + 'px'); save(); });
   on('scRange', 'input', e => { state.settings.sceneSize = +e.target.value; $('#scValS').textContent = e.target.value + 'px'; save(); });
