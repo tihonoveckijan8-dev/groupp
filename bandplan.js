@@ -1988,7 +1988,7 @@ document.addEventListener('click', function (e) {
     case 'group-create': { stop(); cloudCreateWorkspace().catch(e => toast('Не удалось создать группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
     case 'group-join': { stop(); cloudJoinWorkspace().catch(e => toast('Не удалось вступить: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
     case 'group-switch': { stop(); cloudSwitchWorkspace(id).catch(e => toast('Не удалось переключить группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
-    case 'group-leave': { stop(); confirmBox('Покинуть группу?', 'Вы перестанете видеть её репертуар, события и сет-листы. Если вы единственный владелец, сначала передайте владение другому участнику.', () => cloudLeaveWorkspace().catch(e => toast('Не удалось выйти: ' + (e.message || 'ошибка'), 'err', 6000)), 'Покинуть группу', true); break; }
+    case 'group-leave': { stop(); confirmBox('Покинуть группу?', 'Вы перестанете видеть её репертуар, события и сет-листы. Если вы владелец и в группе больше никого нет, группа и её общие данные будут удалены. Если есть другие участники, владение автоматически перейдёт одному из них.', () => cloudLeaveWorkspace().catch(e => toast('Не удалось выйти: ' + (e.message || 'ошибка'), 'err', 6000)), 'Покинуть группу', true); break; }
     case 'sign-out': { stop(); confirmBox('Выйти из аккаунта?', 'Локальная копия останется на этом устройстве. Для повторного доступа потребуется войти снова.', () => BandPlanCloud.signOut().then(() => location.reload()).catch(e => toast(e.message || 'Не удалось выйти', 'err')), 'Выйти', true); break; }
     case 'confirm-yes': { stop(); const cb = confirmCb; hardClose(modalRoot); if (cb) cb(); break; }
     case 'reload-view': stop(); ui.skeleton = true; render(); break;
