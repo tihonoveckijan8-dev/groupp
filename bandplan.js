@@ -300,8 +300,8 @@ async function cloudLoadGroup(groupId) {
     state.profile.roles = remote.account.roles && remote.account.roles.length ? remote.account.roles : state.profile.roles || [];
     state.profile.role = state.profile.roles[0] || state.profile.role || '';
     state.profile.bandName = remote.group.name || 'Моя группа';
-    const ownMember = state.members.find(m => m.accountId === cloudUser.id || m.id === cloudUser.id ||
-      (m.name && m.name === state.profile.name));
+    const namedMatches = state.members.filter(m => m.name && m.name === state.profile.name);
+    const ownMember = state.members.find(m => m.accountId === cloudUser.id || m.id === cloudUser.id) || (namedMatches.length === 1 ? namedMatches[0] : null);
     if (ownMember) ownMember.accountId = cloudUser.id;
     else state.members.unshift({
       id: cloudUser.id, accountId: cloudUser.id, name: state.profile.name || 'Участник',
