@@ -397,6 +397,7 @@ async function cloudSwitchWorkspace(groupId) {
 async function cloudLeaveWorkspace() {
   if (!cloudActiveGroupId) return;
   await cloudPersistNow();
+  if (cloudUnsubscribe) { cloudUnsubscribe(); cloudUnsubscribe = null; }
   await BandPlanCloud.leaveGroup(cloudActiveGroupId);
   await cloudRefreshGroups();
   const next = cloudGroups[0];
