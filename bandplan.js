@@ -363,7 +363,7 @@ async function cloudCreateWorkspace() {
   const name = fv('groupNewName');
   if (name.length < 3) { fieldError('groupNewName', 'Название должно содержать не менее 3 символов'); return; }
   const hadActiveGroup = !!cloudActiveGroupId;
-  await cloudPersistNow().catch(() => {});
+  await cloudPersistNow();
   // WHY: a new workspace starts empty; only legacy local-only data is migrated on first group creation.
   const local = hadActiveGroup ? { songs: [], events: [], setlists: [], members: [] } : cloudSnapshot();
   if (!hadActiveGroup && !localStorage.getItem('bandplan.pre-cloud.backup')) { try { localStorage.setItem('bandplan.pre-cloud.backup', JSON.stringify(state)); } catch (e) { } }
