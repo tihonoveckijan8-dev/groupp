@@ -3,7 +3,7 @@
  * private account data by Authorization header.
  */
 const V = 'bandplan-v17';
-const SUPABASE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+const SUPABASE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 const SHELL = [
   './', 'index.html', 'bandplan.css', 'bandplan.js', 'bandplan-cloud.js',
   'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
