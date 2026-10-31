@@ -2,7 +2,7 @@
  * WHY: never cache authenticated Supabase API responses; cache keys do not safely isolate
  * private account data by Authorization header.
  */
-const V = 'bandplan-v19';;;
+const V = 'bandplan-v20';;;
 const SUPABASE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 const SHELL = [
   './', 'index.html', 'bandplan.css', 'bandplan.js', 'bandplan-cloud.js',
@@ -34,7 +34,7 @@ self.addEventListener('fetch', event => {
   // Supabase Auth, REST, Storage and Realtime traffic is intentionally network-only.
   if (!isSupabaseBundle && url.origin !== self.location.origin) return;
   if (!isSupabaseBundle && request.mode !== 'navigate' &&
-      !/\\.(?:html|css|js|png|webmanifest|svg|woff2?|ico)$/i.test(url.pathname)) return;
+      !/\.(?:html|css|js|png|webmanifest|svg|woff2?|ico)$/i.test(url.pathname)) return;
 
   event.respondWith(
     caches.match(request, { ignoreSearch: !isSupabaseBundle }).then(hit => {
