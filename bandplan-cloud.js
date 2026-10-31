@@ -9,7 +9,7 @@
   const sb = window.supabase.createClient(URL, KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
-  let authMode = 'login';
+  let authMode = 'login';\n  let recoveryRequested = location.hash.indexOf('type=recovery') >= 0;
 
   const $ = (s) => document.querySelector(s);
   const authMessage = (message, error) => {
@@ -47,7 +47,7 @@
     const { data, error } = await sb.auth.getSession();
     if (error) throw error;
     if (!data.session) { showAuth(); return { user: null, groups: [], userState: {} }; }
-    if (location.hash.indexOf('type=recovery') >= 0) { showAuth(); setMode('reset'); return { user: null, groups: [], userState: {}, recovery: true }; }
+    if (recoveryRequested || location.hash.indexOf('type=recovery') >= 0) { showAuth(); setMode('reset'); return { user: null, groups: [], userState: {}, recovery: true }; }
     hideAuth();
     const user = data.session.user;
     const [userStateRes, groupsRes] = await Promise.all([
@@ -201,7 +201,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  sb.auth.onAuthStateChange((event) => {\n    if (event === 'PASSWORD_RECOVERY') { recoveryRequested = true; showAuth(); setMode('reset'); }\n  });\n\n  document.addEventListener('DOMContentLoaded', function () {
     const form = $('#authForm');
     if (form) form.addEventListener('submit', authSubmit);
     const toggle = $('#authToggle');
