@@ -354,8 +354,10 @@ function openWorkspaceModal() {
 async function cloudCreateWorkspace() {
   const name = fv('groupNewName');
   if (name.length < 3) { fieldError('groupNewName', 'Название должно содержать не менее 3 символов'); return; }
+  const hadActiveGroup = !!cloudActiveGroupId;
   await cloudPersistNow().catch(() => {});
-  const local = cloudSnapshot();
+  // WHY: a new workspace starts empty; only legacy local-only data is migrated on first group creation.
+  const local = hadActiveGroup ? { songs: [], events: [], setlists: [], members: [] } : cloudSnapshot();
   const created = await BandPlanCloud.createGroup(name, state.profile.name, state.profile.roles || []);
   if (!created || !created.group_id) throw new Error('Сервер не вернул созданную группу.');
   cloudActiveGroupId = created.group_id;
@@ -370,6 +372,7 @@ async function cloudCreateWorkspace() {
   hardClose(modalRoot); render(); toast('Группа создана. Код приглашения: ' + created.invite_code, 'ok', 8000);
 }
 async function cloudJoinWorkspace() {
+  await cloudPersistNow();
   const code = fv('groupJoinCode').toUpperCase().replace(/\s+/g, '');
   if (!code) { fieldError('groupJoinCode', 'Введите код приглашения'); return; }
   const joined = await BandPlanCloud.joinGroup(code, state.profile.name, state.profile.roles || []);
