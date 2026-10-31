@@ -366,6 +366,7 @@ async function cloudCreateWorkspace() {
   await cloudPersistNow().catch(() => {});
   // WHY: a new workspace starts empty; only legacy local-only data is migrated on first group creation.
   const local = hadActiveGroup ? { songs: [], events: [], setlists: [], members: [] } : cloudSnapshot();
+  if (!hadActiveGroup && !localStorage.getItem('bandplan.pre-cloud.backup')) { try { localStorage.setItem('bandplan.pre-cloud.backup', JSON.stringify(state)); } catch (e) { } }
   const created = await BandPlanCloud.createGroup(name, state.profile.name, state.profile.roles || []);
   if (!created || !created.group_id) throw new Error('Сервер не вернул созданную группу.');
   await cloudRefreshGroups();
@@ -377,6 +378,7 @@ async function cloudCreateWorkspace() {
       (m.name && m.name === state.profile.name));
     if (ownMember) ownMember.accountId = cloudUser.id;
     else state.members.unshift({ id: cloudUser.id, accountId: cloudUser.id, name: state.profile.name || 'Участник', roles: state.profile.roles || [], role: state.profile.role || 'other', color: PALETTE[0], note: 'это вы' });
+    clearTimeout(cloudSaveTimer); save();
   }
   await cloudPersistNow();
   hardClose(modalRoot); render(); toast('Группа создана. Код приглашения: ' + created.invite_code, 'ok', 8000);
@@ -414,7 +416,7 @@ async function cloudLeaveWorkspace() {
     cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
     await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: null });
   }
-  hardClose(modalRoot); go('#/calendar'); render();
+  save(); hardClose(modalRoot); go('#/calendar'); render();
   toast('Вы вышли из группы', 'ok');
 }
 async function cloudCopyInvite() {
