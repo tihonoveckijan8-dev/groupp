@@ -203,7 +203,8 @@ function load() {
     state.settings = Object.assign(defaults().settings, d.settings || {});
     if (!state.settings.accent || ['#6c5ce7', '#2f55d4'].indexOf(state.settings.accent.toLowerCase()) >= 0) state.settings.accent = '#2547D0';
     state.members = d.members || []; state.events = d.events || [];
-    state.songs = d.songs || []; state.setlists = d.setlists || [];\n    state.personalSongs = d.personalSongs || []; state.personalSetlists = d.personalSetlists || [];
+    state.songs = d.songs || []; state.setlists = d.setlists || [];
+    state.personalSongs = d.personalSongs || []; state.personalSetlists = d.personalSetlists || [];
     return true;
   } catch (e) { return false; }
 }
@@ -619,7 +620,8 @@ function buildChrome() {
   $('#brandBand').textContent = p.bandName || 'Моя группа';
   $('#sideProfile').innerHTML = '<div class="av" aria-hidden="true">' + esc(((p.name || 'B').charAt(0)).toUpperCase()) + '</div>' +
     '<div style="min-width:0"><div class="nm">' + esc(p.name || 'Профиль не заполнен') + '</div><div class="rl">' + esc(rolesLabel(myRoles())) + '</div></div>';
-  $('#tbAvatar').textContent = ((p.name || 'B').charAt(0)).toUpperCase();\n  cloudUpdateButton();
+  $('#tbAvatar').textContent = ((p.name || 'B').charAt(0)).toUpperCase();
+  cloudUpdateButton();
 
   const th = state.settings.theme;
   const thIco = ic(th === 'light' ? 'moon' : 'sun', 18);
@@ -1813,7 +1815,13 @@ document.addEventListener('click', function (e) {
   const stop = () => { e.preventDefault(); e.stopPropagation(); };
   const btnLoading = b => { if (b) { b.classList.add('loading'); setTimeout(() => b.classList.remove('loading'), 500); } };
   switch (a) {
-    case 'modal-close': stop(); closeModal(); break;\n    case 'group-menu': stop(); openWorkspaceModal(); break;\n    case 'group-create': { stop(); btnLoading(el); cloudCreateWorkspace().catch(e => toast('Не удалось создать группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-join': { stop(); btnLoading(el); cloudJoinWorkspace().catch(e => toast('Не удалось вступить: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-switch': { stop(); cloudSwitchWorkspace(id).catch(e => toast('Не удалось переключить группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }\n    case 'group-leave': { stop(); confirmBox('Покинуть группу?', 'Вы перестанете видеть её репертуар, события и сет-листы. Если вы единственный владелец, сначала передайте владение другому участнику.', () => cloudLeaveWorkspace().catch(e => toast('Не удалось выйти: ' + (e.message || 'ошибка'), 'err', 6000)), 'Покинуть группу', true); break; }\n    case 'sign-out': { stop(); confirmBox('Выйти из аккаунта?', 'Локальная копия останется на этом устройстве. Для повторного доступа потребуется войти снова.', () => BandPlanCloud.signOut().then(() => location.reload()).catch(e => toast(e.message || 'Не удалось выйти', 'err')), 'Выйти', true); break; }
+    case 'modal-close': stop(); closeModal(); break;
+    case 'group-menu': stop(); openWorkspaceModal(); break;
+    case 'group-create': { stop(); btnLoading(el); cloudCreateWorkspace().catch(e => toast('Не удалось создать группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
+    case 'group-join': { stop(); btnLoading(el); cloudJoinWorkspace().catch(e => toast('Не удалось вступить: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
+    case 'group-switch': { stop(); cloudSwitchWorkspace(id).catch(e => toast('Не удалось переключить группу: ' + (e.message || 'ошибка'), 'err', 6000)); break; }
+    case 'group-leave': { stop(); confirmBox('Покинуть группу?', 'Вы перестанете видеть её репертуар, события и сет-листы. Если вы единственный владелец, сначала передайте владение другому участнику.', () => cloudLeaveWorkspace().catch(e => toast('Не удалось выйти: ' + (e.message || 'ошибка'), 'err', 6000)), 'Покинуть группу', true); break; }
+    case 'sign-out': { stop(); confirmBox('Выйти из аккаунта?', 'Локальная копия останется на этом устройстве. Для повторного доступа потребуется войти снова.', () => BandPlanCloud.signOut().then(() => location.reload()).catch(e => toast(e.message || 'Не удалось выйти', 'err')), 'Выйти', true); break; }
     case 'confirm-yes': { stop(); const cb = confirmCb; hardClose(modalRoot); if (cb) cb(); break; }
     case 'reload-view': stop(); ui.skeleton = true; render(); break;
     case 'nav': stop(); ui.skeleton = true; go('#/' + el.getAttribute('data-to')); break;
@@ -2326,7 +2334,13 @@ function wireStickyHeader() {
 }
 
 /* ═══ 26. INIT ═══ */
-async function init() {\n  const had = load();\n  if (window.BandPlanCloud) {\n    try { const ready = await cloudStart(); if (!ready) return; }\n    catch (e) { const gate = $('#authGate'); if (gate) gate.hidden = false; toast('Не удалось подключиться к аккаунту: ' + (e.message || 'ошибка сети'), 'err', 7000); return; }\n  }\n  applyTheme(); applyAccentVars();
+async function init() {
+  const had = load();
+  if (window.BandPlanCloud) {
+    try { const ready = await cloudStart(); if (!ready) return; }
+    catch (e) { const gate = $('#authGate'); if (gate) gate.hidden = false; toast('Не удалось подключиться к аккаунту: ' + (e.message || 'ошибка сети'), 'err', 7000); return; }
+  }
+  applyTheme(); applyAccentVars();
   ui.calView = state.settings.calView || 'month';
   if (!location.hash) location.hash = '#/calendar';
   window.addEventListener('hashchange', function () { ui.skeleton = true; render(); });
