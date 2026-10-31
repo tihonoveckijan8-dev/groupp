@@ -1237,12 +1237,14 @@ function vSetlist(id) {
     '<span class="badge b-muted num">' + ic('clock', 11) + fmtDur(setlistDur(sl)) + '</span>' +
     '<button class="btn btn-danger btn-sm" type="button" data-act="sl-clear" data-id="' + sl.id + '">Очистить программу</button></div></section>';
   h += '</div><div class="stack">';
-  h += '<section class="card rise" style="animation-delay:.05s"><div class="card-h"><div><h2>Привязка и заметки</h2><div class="sub">Сет-лист появится в карточке события</div></div></div>' +
-    '<div class="field"><label class="field-label" for="slEventSel">Событие</label><select class="select" id="slEventSel"><option value="">— не привязан —</option>' +
-    up.map(o => '<option value="' + o.ev.id + '"' + (sl.eventId === o.ev.id ? ' selected' : '') + '>' + esc(pdate(o.date) + ' · ' + o.ev.title) + '</option>').join('') +
-    state.events.filter(e => e.status === 'done').slice(0, 10).map(e => '<option value="' + e.id + '"' + (sl.eventId === e.id ? ' selected' : '') + '>' + esc(pdate(e.date) + ' · ' + e.title + ' (проведено)') + '</option>').join('') + '</select></div>' +
+  const personalTemplate = isPersonalSetlist(sl.id);
+  h += '<section class="card rise" style="animation-delay:.05s"><div class="card-h"><div><h2>' + (personalTemplate ? 'Личный шаблон' : 'Привязка и заметки') + '</h2><div class="sub">' + (personalTemplate ? 'Хранится в вашем аккаунте и не зависит от группы' : 'Сет-лист появится в карточке события') + '</div></div></div>' +
+    (personalTemplate ? '<p class="t-sm t-muted mb">При импорте в группу песни и сет-лист будут скопированы с отдельными идентификаторами. Исходный шаблон останется неизменным.</p>' :
+      '<div class="field"><label class="field-label" for="slEventSel">Событие</label><select class="select" id="slEventSel"><option value="">— не привязан —</option>' +
+      up.map(o => '<option value="' + o.ev.id + '"' + (sl.eventId === o.ev.id ? ' selected' : '') + '>' + esc(pdate(o.date) + ' · ' + o.ev.title) + '</option>').join('') +
+      state.events.filter(e => e.status === 'done').slice(0, 10).map(e => '<option value="' + e.id + '"' + (sl.eventId === e.id ? ' selected' : '') + '>' + esc(pdate(e.date) + ' · ' + e.title + ' (проведено)') + '</option>').join('') + '</select></div>') +
     '<div class="field"><label class="field-label" for="slNoteInp">Заметки к сет-листу</label><textarea class="input" id="slNoteInp" rows="3" style="font-family:var(--font);min-height:84px" placeholder="Переходы, вступления, динамика программы">' + esc(sl.note || '') + '</textarea></div>' +
-    '<button class="btn btn-primary btn-block" type="button" data-act="sl-meta-save" data-id="' + sl.id + '">' + ic('check', 16) + 'Сохранить изменения</button></section>';
+    '<button class="btn btn-primary btn-block" type="button" data-act="' + (personalTemplate ? 'sl-template-meta-save' : 'sl-meta-save') + '" data-id="' + sl.id + '">' + ic('check', 16) + 'Сохранить изменения</button></section>';
   h += '<section class="card rise" style="animation-delay:.08s"><div class="card-h"><div><h2>Библиотека песен</h2><div class="sub">' + state.songs.length + ' ' + plural(state.songs.length, 'песня', 'песни', 'песен') + ' в репертуаре</div></div></div>' +
     '<div class="tb-search mb" style="height:44px">' + ic('search', 17) + '<label class="sr-only" for="libQ">Поиск песни</label>' +
     '<input id="libQ" type="search" placeholder="Поиск песни…" value="' + esc(ui.libQuery) + '" style="border:none;background:none;outline:none;font-size:13.5px;flex:1;min-width:0;box-shadow:none"></div>' +
@@ -2165,7 +2167,7 @@ document.addEventListener('click', function (e) {
       }, 'Очистить программу', true);
       break;
     }
-    case 'sl-meta-save': {
+    case 'sl-template-meta-save': { stop(); const sl = slById(id); if (!sl || !isPersonalSetlist(id)) break; sl.note = $('#slNoteInp') ? $('#slNoteInp').value.trim() : sl.note; sl.updatedAt = new Date().toISOString(); commit(); toast('Личный шаблон сохранён', 'ok'); break; }\n    case 'sl-meta-save': {
       stop(); btnLoading(el);
       const sl = slById(id); if (!sl) break;
       const newEv = $('#slEventSel') ? $('#slEventSel').value : '';
