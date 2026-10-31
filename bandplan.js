@@ -1351,7 +1351,7 @@ function vSettings() {
     ROLES.map(r => '<button class="chip' + (myRoles().indexOf(r.k) >= 0 ? ' on' : '') + '" type="button" data-act="role-set" data-v="' + r.k + '" aria-pressed="' + (myRoles().indexOf(r.k) >= 0) + '">' + ic(r.icon, 14) + esc(r.label) + '</button>').join('') + '</div></div>' +
     '<div class="field"><span class="field-label">Участие по умолчанию</span><div class="seg">' +
     [['yes', 'Участвую'], ['maybe', 'Под вопросом'], ['no', 'Не участвую']].map(o => '<button type="button" data-act="part-def" data-v="' + o[0] + '" class="' + (p.defaultParticipation === o[0] ? 'on' : '') + '" data-accent="1">' + o[1] + '</button>').join('') + '</div></div>' +
-    '<button class="btn btn-secondary btn-block" type="button" data-act="invite">' + ic('link', 16) + 'Скопировать ссылку-приглашение</button></section>';
+    '<button class="btn btn-secondary btn-block" type="button" data-act="invite">' + ic('link', 16) + 'Скопировать код приглашения</button></section>';
 
   h += '<section class="card rise" style="animation-delay:.04s"><div class="card-h"><div><h2>Состав группы</h2><div class="sub">' + state.members.length + ' ' + plural(state.members.length, 'участник', 'участника', 'участников') + '</div></div>' +
     '<button class="btn btn-primary btn-sm" type="button" data-act="mem-add">' + ic('plus', 15) + 'Добавить</button></div>';
