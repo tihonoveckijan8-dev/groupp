@@ -378,7 +378,7 @@ async function cloudCreateWorkspace() {
       (m.name && m.name === state.profile.name));
     if (ownMember) ownMember.accountId = cloudUser.id;
     else state.members.unshift({ id: cloudUser.id, accountId: cloudUser.id, name: state.profile.name || 'Участник', roles: state.profile.roles || [], role: state.profile.role || 'other', color: PALETTE[0], note: 'это вы' });
-    clearTimeout(cloudSaveTimer); save();
+    save(); clearTimeout(cloudSaveTimer);
   }
   await cloudPersistNow();
   hardClose(modalRoot); render(); toast('Группа создана. Код приглашения: ' + created.invite_code, 'ok', 8000);
