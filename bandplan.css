@@ -1443,3 +1443,20 @@ h1,h2,h3,h4,p,.sub,.nm,.rl,.ev-title,.ev-meta,.sd-t,.sd-m,.brand-name,.brand-sub
   box-shadow:var(--shadow-xs);font-size:12.5px;font-weight:var(--fw-semi)}
 .group-switch-btn:hover{color:var(--accent);background:var(--accent-soft)}
 @media(max-width:600px){.auth-gate{padding:16px}.auth-card{border-radius:24px}.group-switch-btn{max-width:112px;padding:0 9px;font-size:11px}}
+
+
+/* ─── PERSONAL LIBRARY / SETLIST TEMPLATES ──────────────────────────── */
+.scope-switch{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 var(--s3)}
+.scope-switch button{display:inline-flex;align-items:center;gap:9px;min-height:42px;padding:0 15px;border-radius:var(--r-14);
+  color:var(--text-2);background:var(--surf-2);box-shadow:var(--shadow-xs);font-size:13px;font-weight:var(--fw-semi)}
+.scope-switch button span{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;
+  background:var(--surf-3);color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.scope-switch button.on{color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow-inset)}
+.workspace-settings{grid-column:1/-1}
+.workspace-list{display:flex;flex-direction:column;gap:8px}
+.workspace-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-14);background:var(--surf-1)}
+.workspace-row .grow{display:flex;flex-direction:column;gap:3px;min-width:0}
+.workspace-row b{font-size:14px;overflow-wrap:anywhere}
+.workspace-create,.workspace-join{margin-top:18px;padding-top:16px;border-top:1px solid var(--divider)}
+.workspace-create h4,.workspace-join h4{font-size:14px;margin:0 0 12px}
+@media(max-width:600px){.scope-switch{display:grid;grid-template-columns:1fr 1fr}.scope-switch button{justify-content:center;padding:0 8px;font-size:12px}}
