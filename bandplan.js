@@ -309,6 +309,8 @@ async function cloudLoadGroup(groupId) {
     });
     state.settings = Object.assign(defaults().settings, localSettings, remote.account.personal_settings || {});
     cloudActiveGroupId = groupId;
+    // WHY: each opened group starts in its own collections; personal data remains separate.
+    ui.songScope = 'group'; ui.setlistScope = 'group';
     cloudLastSnapshot = cloudSnapshot();
     cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: groupId });
     if (cloudUnsubscribe) cloudUnsubscribe();
@@ -354,6 +356,8 @@ async function cloudStart() {
     }
     await cloudLoadGroup(active.group_id);
   } else {
+    // WHY: without a workspace, newly created songs and setlists must be saved personally.
+    ui.songScope = 'personal'; ui.setlistScope = 'personal';
     state.profile = Object.assign(defaults().profile, state.profile, cloudUserState.profile || {});
     state.profile.name = state.profile.name || (cloudUser.email || '').split('@')[0];
     state.settings = Object.assign(defaults().settings, state.settings, cloudUserState.settings || {});
@@ -434,6 +438,8 @@ async function cloudLeaveWorkspace() {
   else {
     cloudActiveGroupId = null;
     state.songs = []; state.events = []; state.setlists = []; state.members = [];
+    // WHY: after leaving the last group, creation actions must target personal collections.
+    ui.songScope = 'personal'; ui.setlistScope = 'personal';
     state.profile.bandName = 'Личное пространство';
     cloudLastSnapshot = { songs: [], events: [], setlists: [], members: [] };
     await BandPlanCloud.saveUserState(cloudUser.id, { activeGroupId: null });
