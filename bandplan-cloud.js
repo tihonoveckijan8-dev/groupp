@@ -95,6 +95,16 @@
       p_delete_setlists: removed('setlists'), p_group_id: groupId
     });
     if (rpcError) throw rpcError;
+    // WHY: preserve other members' event responses when two clients save the shared group state close together.
+    const currentState = await sb.from('bandplan_group_state').select('state').eq('group_id', groupId).maybeSingle();
+    if (currentState.error) throw currentState.error;
+    const priorEvents = currentState.data && currentState.data.state && currentState.data.state.events || [];
+    snapshot.events = snapshot.events.map(event => {
+      const prior = priorEvents.find(item => item.id === event.id);
+      return Object.assign({}, event, {
+        participation: Object.assign({}, prior && prior.participation || {}, event.participation || {})
+      });
+    });
     const { error } = await sb.from('bandplan_group_state').upsert({
       group_id: groupId, state: snapshot, updated_at: new Date().toISOString()
     }, { onConflict: 'group_id' });
