@@ -1493,7 +1493,8 @@ function readSongForm(id) {
   if (bpm !== null && (isNaN(bpm) || bpm < 20 || bpm > 400)) { fieldError('f_sbpm', 'Темп должен быть в диапазоне 20–400 BPM'); return null; }
   const old = id ? songById(id) : null;
   return {
-    id: id || uid('s'), title: title, artist: fv('f_sartist'), key: $('#f_skey', w).value,\n    groupSourceId: old && old.groupSourceId, personalSourceId: old && old.personalSourceId,
+    id: id || uid('s'), title: title, artist: fv('f_sartist'), key: $('#f_skey', w).value,
+    groupSourceId: old && old.groupSourceId, personalSourceId: old && old.personalSourceId,
     bpm: bpm, duration: durParse(fv('f_sdur')),
     tags: fv('f_stags').split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 8),
     lyrics: $('#f_slyr', w).value, fav: old ? !!old.fav : false, addedAt: old ? old.addedAt : today(),
