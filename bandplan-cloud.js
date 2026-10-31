@@ -9,7 +9,8 @@
   const sb = window.supabase.createClient(URL, KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
-  let authMode = 'login';\n  let recoveryRequested = location.hash.indexOf('type=recovery') >= 0;
+  let authMode = 'login';
+  let recoveryRequested = location.hash.indexOf('type=recovery') >= 0;
 
   const $ = (s) => document.querySelector(s);
   const authMessage = (message, error) => {
@@ -201,7 +202,11 @@
     }
   }
 
-  sb.auth.onAuthStateChange((event) => {\n    if (event === 'PASSWORD_RECOVERY') { recoveryRequested = true; showAuth(); setMode('reset'); }\n  });\n\n  document.addEventListener('DOMContentLoaded', function () {
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') { recoveryRequested = true; showAuth(); setMode('reset'); }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
     const form = $('#authForm');
     if (form) form.addEventListener('submit', authSubmit);
     const toggle = $('#authToggle');
