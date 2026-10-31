@@ -232,9 +232,13 @@ function cloudScheduleSave() {
 async function cloudPersistNow() {
   if (!cloudUser || !window.BandPlanCloud) return;
   const ownMember = state.members.find(m => m.accountId === cloudUser.id || m.id === cloudUser.id);
-  if (cloudActiveGroupId && ownMember) { ownMember.name = state.profile.name || ownMember.name; ownMember.roles = state.profile.roles || ownMember.roles || []; ownMember.role = state.profile.role || ownMember.role || 'other'; }
+  if (cloudActiveGroupId && ownMember) {
+    ownMember.name = state.profile.name || ownMember.name;
+    ownMember.roles = state.profile.roles || ownMember.roles || [];
+    ownMember.role = state.profile.role || ownMember.role || 'other';
+  }
   const current = cloudSnapshot();
-  if (cloudActiveGroupId) cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot, cloudUser.id);
+  // WHY: keep personal collections durable even if the shared group write fails during a network outage.
   cloudUserState = await BandPlanCloud.saveUserState(cloudUser.id, {
     activeGroupId: cloudActiveGroupId,
     profile: {
@@ -246,6 +250,7 @@ async function cloudPersistNow() {
     personalSongs: state.personalSongs || [],
     personalSetlists: state.personalSetlists || []
   });
+  if (cloudActiveGroupId) cloudLastSnapshot = await BandPlanCloud.persistGroup(cloudActiveGroupId, state, cloudLastSnapshot, cloudUser.id);
   return current;
 }
 function cloudUpdateButton() {
