@@ -1072,7 +1072,7 @@ function importTemplateToGroup(id) {
 
 function vSongs() {
   const list = filteredSongs(), tags = allTags();
-  let h = '<div class="scope-switch"><button type="button" data-act="song-scope" data-v="group" class="' + (ui.songScope === 'group' ? 'on' : '') + '">Репертуар группы <span>' + state.songs.length + '</span></button><button type="button" data-act="song-scope" data-v="personal" class="' + (ui.songScope === 'personal' ? 'on' : '') + '">Моя библиотека <span>' + state.personalSongs.length + '</span></button></div>' +
+  let h = '<div class="scope-switch">' + (cloudActiveGroupId ? '<button type="button" data-act="song-scope" data-v="group" class="' + (ui.songScope === 'group' ? 'on' : '') + '">Репертуар группы <span>' + state.songs.length + '</span></button>' : '') + '<button type="button" data-act="song-scope" data-v="personal" class="' + (ui.songScope === 'personal' ? 'on' : '') + '">Моя библиотека <span>' + state.personalSongs.length + '</span></button></div>' +
     '<div class="toolbar">' +
     '<div class="tb-search grow">' + ic('search', 18) + '<label class="sr-only" for="songQ">Поиск песен</label>' +
     '<input id="songQ" type="search" placeholder="Название, автор, текст, тег" value="' + esc(ui.songQuery) + '" style="border:none;background:none;outline:none;font-size:var(--fs-body-s);flex:1;min-width:0;box-shadow:none">' +
@@ -1225,7 +1225,7 @@ const infoRow = (l, v) => '<div class="info-row"><span class="l">' + esc(l) + '<
 /* ═══ 13. SETLISTS ═══ */
 function vSetlists() {
   const list = activeSetlists();
-  let h = '<div class="scope-switch"><button type="button" data-act="setlist-scope" data-v="group" class="' + (ui.setlistScope === 'group' ? 'on' : '') + '">Сет-листы группы <span>' + state.setlists.length + '</span></button><button type="button" data-act="setlist-scope" data-v="personal" class="' + (ui.setlistScope === 'personal' ? 'on' : '') + '">Мои шаблоны <span>' + state.personalSetlists.length + '</span></button></div>';
+  let h = '<div class="scope-switch">' + (cloudActiveGroupId ? '<button type="button" data-act="setlist-scope" data-v="group" class="' + (ui.setlistScope === 'group' ? 'on' : '') + '">Сет-листы группы <span>' + state.setlists.length + '</span></button>' : '') + '<button type="button" data-act="setlist-scope" data-v="personal" class="' + (ui.setlistScope === 'personal' ? 'on' : '') + '">Мои шаблоны <span>' + state.personalSetlists.length + '</span></button></div>';
   if (!list.length) return h + '<div class="card">' + stateHTML('empty', ui.setlistScope === 'personal' ? 'Личных шаблонов пока нет' : 'Сет-листов пока нет',
     'Сет-лист — программа выступления: песни в нужном порядке, тональности, переходы и заметки для музыкантов.',
     '<button class="btn btn-primary" type="button" data-act="new-setlist">' + ic('plus', 17) + (ui.setlistScope === 'personal' ? 'Создать шаблон' : 'Создать первый сет-лист') + '</button>') + '</div>';
