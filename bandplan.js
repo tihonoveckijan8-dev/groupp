@@ -321,6 +321,15 @@ async function cloudStart() {
   const boot = await BandPlanCloud.start();
   if (!boot.user) return false;
   cloudUser = boot.user; cloudUserState = boot.userState || {}; cloudGroups = boot.groups || [];
+  const previousAccountId = localStorage.getItem('bandplan.account.id');
+  if (previousAccountId && previousAccountId !== cloudUser.id) {
+    if (!localStorage.getItem('bandplan.pre-cloud.backup')) {
+      try { localStorage.setItem('bandplan.pre-cloud.backup', localStorage.getItem(KEY) || JSON.stringify(state)); } catch (e) { }
+    }
+    state = defaults();
+    try { localStorage.removeItem(KEY); } catch (e) { }
+  }
+  localStorage.setItem('bandplan.account.id', cloudUser.id);
   state.personalSongs = Array.isArray(cloudUserState.personalSongs) ? cloudUserState.personalSongs : state.personalSongs || [];
   state.personalSetlists = Array.isArray(cloudUserState.personalSetlists) ? cloudUserState.personalSetlists : state.personalSetlists || [];
   if (cloudUserState.onboardingDone !== undefined) state.onboardingDone = !!cloudUserState.onboardingDone;
