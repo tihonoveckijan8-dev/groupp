@@ -2167,7 +2167,8 @@ document.addEventListener('click', function (e) {
       }, 'Очистить программу', true);
       break;
     }
-    case 'sl-template-meta-save': { stop(); const sl = slById(id); if (!sl || !isPersonalSetlist(id)) break; sl.note = $('#slNoteInp') ? $('#slNoteInp').value.trim() : sl.note; sl.updatedAt = new Date().toISOString(); commit(); toast('Личный шаблон сохранён', 'ok'); break; }\n    case 'sl-meta-save': {
+    case 'sl-template-meta-save': { stop(); const sl = slById(id); if (!sl || !isPersonalSetlist(id)) break; sl.note = $('#slNoteInp') ? $('#slNoteInp').value.trim() : sl.note; sl.updatedAt = new Date().toISOString(); commit(); toast('Личный шаблон сохранён', 'ok'); break; }
+    case 'sl-meta-save': {
       stop(); btnLoading(el);
       const sl = slById(id); if (!sl) break;
       const newEv = $('#slEventSel') ? $('#slEventSel').value : '';
