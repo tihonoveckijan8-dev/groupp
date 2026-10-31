@@ -185,7 +185,7 @@
         location.reload();
       } else if (authMode === 'signup') {
         const { data, error } = await sb.auth.signUp({
-          email, password, options: { emailRedirectTo: location.href.split('?')[0] }
+          email, password, options: { emailRedirectTo: location.origin + location.pathname }
         });
         if (error) throw error;
         if (data.session) location.reload();
