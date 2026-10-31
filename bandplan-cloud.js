@@ -89,31 +89,78 @@
       songs: appState.songs || [], events,
       setlists: appState.setlists || [], members: appState.members || []
     };
-    const before = previous || { songs: [], events: [], setlists: [] };
+    const before = previous || { songs: [], events: [], setlists: [], members: [] };
     const removed = (key) => (before[key] || []).map(x => x.id).filter(id => !(snapshot[key] || []).some(x => x.id === id));
+    const deleted = {
+      songs: removed('songs'), events: removed('events'),
+      setlists: removed('setlists'), members: removed('members')
+    };
     const { error: rpcError } = await sb.rpc('bandplan_sync_group', {
       p_songs: snapshot.songs, p_events: snapshot.events, p_setlists: snapshot.setlists,
       p_roster: snapshot.members, p_display_name: appState.profile && appState.profile.name || '',
       p_roles: appState.profile && appState.profile.roles || [],
       p_personal_settings: appState.settings || {},
-      p_delete_songs: removed('songs'), p_delete_events: removed('events'),
-      p_delete_setlists: removed('setlists'), p_group_id: groupId
+      p_delete_songs: deleted.songs, p_delete_events: deleted.events,
+      p_delete_setlists: deleted.setlists, p_group_id: groupId
     });
     if (rpcError) throw rpcError;
-    // WHY: preserve other members' event responses when two clients save the shared group state close together.
+
+    // WHY: merge non-conflicting edits from other musicians instead of replacing their
+    // recently added songs/events/setlists with this device's older local snapshot.
     const currentState = await sb.from('bandplan_group_state').select('state').eq('group_id', groupId).maybeSingle();
     if (currentState.error) throw currentState.error;
-    const priorEvents = currentState.data && currentState.data.state && currentState.data.state.events || [];
-    snapshot.events = snapshot.events.map(event => {
-      const prior = priorEvents.find(item => item.id === event.id);
-      return Object.assign({}, event, {
-        participation: Object.assign({}, prior && prior.participation || {}, event.participation || {})
-      });
-    });
+    const remote = currentState.data && currentState.data.state || {};
+    const normalize = (key, item) => {
+      if (key !== 'events') return item;
+      const copy = Object.assign({}, item);
+      delete copy.myStatus;
+      return copy;
+    };
+    const mergeCollection = (key) => {
+      const localItems = snapshot[key] || [];
+      const remoteItems = remote[key] || [];
+      const previousItems = before[key] || [];
+      const localMap = new Map(localItems.map(item => [item.id, item]));
+      const remoteMap = new Map(remoteItems.map(item => [item.id, item]));
+      const previousMap = new Map(previousItems.map(item => [item.id, item]));
+      const merged = [];
+      for (const item of localItems) {
+        const prior = previousMap.get(item.id);
+        const remoteItem = remoteMap.get(item.id);
+        if (prior && !remoteItem) continue; // a remote deletion wins over a stale local copy
+        let chosen = prior && remoteItem && JSON.stringify(normalize(key, item)) === JSON.stringify(normalize(key, prior))
+          ? remoteItem : item;
+        if (key === 'events') {
+          chosen = Object.assign({}, chosen, {
+            participation: Object.assign({}, remoteItem && remoteItem.participation || {}, item.participation || {})
+          });
+        }
+        merged.push(chosen);
+      }
+      for (const item of remoteItems) {
+        if (localMap.has(item.id) || deleted[key].includes(item.id)) continue;
+        merged.push(item);
+      }
+      return merged;
+    };
+    snapshot.songs = mergeCollection('songs');
+    snapshot.events = mergeCollection('events');
+    snapshot.setlists = mergeCollection('setlists');
+    snapshot.members = mergeCollection('members');
+
     const { error } = await sb.from('bandplan_group_state').upsert({
       group_id: groupId, state: snapshot, updated_at: new Date().toISOString()
     }, { onConflict: 'group_id' });
     if (error) throw error;
+
+    // Keep this device aligned with the merged workspace so the next save does not
+    // mistake another member's additions for local deletions.
+    appState.songs = snapshot.songs;
+    appState.events = snapshot.events.map(event => Object.assign({}, event, {
+      myStatus: event.participation && event.participation[userId] || ''
+    }));
+    appState.setlists = snapshot.setlists;
+    appState.members = snapshot.members;
     return snapshot;
   }
 
